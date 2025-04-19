@@ -336,7 +336,7 @@ export default class Account {
    * @param {number} id - The ID to retrieve the shop ID for.
    * @return {Promise<number>} The shop ID.
    */
-  async getShopId(idOrCookies: number | any): Promise<number> {
+  async getShopId(idOrCookies: number | any): Promise<string> {
     let cookies: object[] = [];
     if (typeof idOrCookies === "number") {
       const exists: boolean = await this.exists(idOrCookies);
@@ -378,7 +378,7 @@ export default class Account {
     if (response.ok) {
       const data = await response.json();
       console.log(data);
-      return parseInt(data.data.userShopInfo.info.shop_id);
+      return data.data.userShopInfo.info.shop_id
     } else {
       throw new Error(
         `Failed for get the shopid because tokopedia was returned error code: ${response.statusText}`
@@ -474,7 +474,7 @@ export default class Account {
     } else if (emailFormatted.length < 1) {
       throw new Error("Email harus diisi");
     }
-    let shopid = 0;
+    let shopid = '';
     const exists: boolean = await this.exists(emailFormatted);
     if (exists) {
       throw new Error("Akun sudah ditambahkan sebelumnya");
@@ -484,7 +484,7 @@ export default class Account {
       while (true) {
         try {
           shopid = await this.getShopId(cookies);
-          if (shopid == 0) {
+          if (shopid == '') {
             await new Promise((r) => setTimeout(r, 500));
             continue;
           } else {
@@ -503,51 +503,28 @@ export default class Account {
                 "${nameFormatted}",
                 "${emailFormatted}",
                 "${passwordFormatted}",
-                false,
+                0,
                 ${currentEpoch},
-                '${JSON.stringify(cookies)}',
-                ${useAuthenticator ? "true" : "false"},
+                '[]',
+                ${useAuthenticator ? 1 : 0},
                 "${authenticatorFormatted}",
-                "", 
-                0, 
-                0, 
+                 null,
+                 0,
+                 0,
+                 0,
+                 0,0,0,
+                 0,
+                 0,0,0,
+                 0,0,
+                 0,0,
+                 0, 
+                "${labelsFormatted}",
                 0,
-                0, 
-                0,
-                0,
-                0, 
-                0,
-                0,
-                0,
-                0,
-                0,
-                0, 
-                0,
-                "",
-                "",
-                "",
-                false,
-                false,
-                0,
-                0,
-                "${labelsFormatted}", 
-                0,
-                false,
-                ${isNaN(shopid) ? 0 : shopid},
-                ${authenticated && !isNaN(shopid) ? "true" : "false"},
                 '',
-                '',
-                '',
-                '',
-                0,
-                0,
-                0,
-                0,
-                0,
+                0,  
                 0,
                 null,
                 null,
-                0,
                 0,
                 0
             )
@@ -580,29 +557,12 @@ export default class Account {
       dikirimPotency: 0,
       complaintCount: 0,
       complaintPotency: 0,
-      freeOngkir: false,
-      powerMerchant: false,
       productCount: 0,
-      score: 0,
       shopid: shopid,
       warning: false,
-      bankName: "",
-      bankNumber: "",
-      bankAN: "",
-      discusCount: 0,
-      location: "",
-      pmImage: "",
-      badgeImage: "",
-      pmName: "",
-      inactiveProduct: 0,
-      activeProduct: 0,
-      archivedProduct: 0,
-      violationProduct: 0,
-      productSpace: 0,
       pinned: 0,
       pinnedAt: null,
       statusMessage: null,
-      pmRevoked: 0,
       pmSort: 0,
       statusSort: 0
     };
@@ -1003,7 +963,7 @@ export default class Account {
       console.log("getting the shopid");
       shopid = await this.getShopId(cookies);
       console.log("shopid taked: ", shopid);
-      if (shopid != 0) {
+      if (shopid != "") {
         await this.setShopId(shopid, account.id);
         break;
       } else {
@@ -1091,7 +1051,7 @@ export default class Account {
     
   }
 
-  async setShopId(shopid: number, id: number): Promise<void> {
+  async setShopId(shopid: string, id: number): Promise<void> {
     const sql = `
             UPDATE account SET shopid = ${shopid} WHERE id = "${id}"
         `;
@@ -1183,7 +1143,7 @@ export default class Account {
         lastChatEpoch: row?.lastChatEpoch,
         secretAutenticator: row?.secretAutenticator,
         orderEpoch: row?.orderEpoch,
-        orderPotency: row?.orderPotency,
+        orderPotency: row?.orderCount,
         orderCount: row?.orderCount,
         balance: row?.balance,
         dikemasCount: row?.dikemasCount,
@@ -1193,34 +1153,18 @@ export default class Account {
         dikirimPotency: row?.dikirimPotency,
         complaintCount: row?.complaintCount,
         complaintPotency: row?.complaintPotency,
-        bankName: row?.bankName,
-        bankNumber: row?.bankNumber,
-        bankAN: row?.bankAN,
-        freeOngkir: this.parseBoolean(row?.freeOngkir),
-        powerMerchant: this.parseBoolean(row?.powerMerchant),
         productCount: row?.productCount,
-        score: row?.score,
         groupNames: row?.groupNames,
-        discusCount: row?.discusCount,
         warning: this.parseBoolean(row?.warning),
         shopid: row?.shopid,
         authenticated: this.parseBoolean(row?.authenticated),
-        location: row?.location,
         badgeImage: row?.badgeImage,
-        pmImage: row?.pmImage,
-        pmName: row?.pmName,
-        violationProduct: row?.violationProduct,
-        activeProduct: row?.activeProduct,
-        archivedProduct: row?.archivedProduct,
-        inactiveProduct: row?.inactiveProduct,
-        productSpace: row?.productSpace,
         pinned: row?.pinned,
         pinnedAt: row?.pinnedAt,
         statusMessage: row?.statusMessage === 'null' ? null : row?.statusMessage,
-        pmRevoked: row?.pmRevoked,
         pmSort: row?.pmSort,
         statusSort: row?.statusSort
-      });
+      } as StructAccount);
     }
     return data;
   }
@@ -1284,7 +1228,6 @@ export default class Account {
       const results: any = await this.db.query(sql);
       const res: any = results[0];
       const acc: StructAccount = {
-        location: res?.location,
         id: res?.id,
         name: res?.name,
         email: res?.email,
@@ -1309,30 +1252,14 @@ export default class Account {
         dikirimPotency: res?.dikirimPotency,
         complaintCount: res?.complaintCount,
         complaintPotency: res?.complaintPotency,
-        bankName: res?.bankName,
-        bankNumber: res?.bankNumber,
-        bankAN: res?.bankAN,
-        freeOngkir: this.parseBoolean(res?.freeOngkir),
-        powerMerchant: this.parseBoolean(res?.powerMerchant),
         productCount: res?.productCount,
-        score: res?.score,
         groupNames: res?.groupNames,
-        discusCount: res?.discusCount,
         warning: this.parseBoolean(res?.warning),
         shopid: res?.shopid,
         authenticated: this.parseBoolean(res?.authenticated),
-        pmImage: res?.pmImage,
-        badgeImage: res?.badgeImage,
-        pmName: res?.pmName,
-        violationProduct: res?.violationProduct,
-        activeProduct: res?.activeProduct,
-        inactiveProduct: res?.inactiveProduct,
-        archivedProduct: res?.archivedProduct,
-        productSpace: res?.productSpace,
         pinned: res?.pinned,
         pinnedAt: res?.pinnedAt,
         statusMessage: res?.statusMessage === 'null' ? null : res?.statusMessage,
-        pmRevoked: res?.pmRevoked,
         pmSort: res?.pmSort,
         statusSort: res?.statusSort
       };
@@ -1452,127 +1379,7 @@ export default class Account {
     console.log('Process finished')
   }
 
-  private async fixSinglePO(account: StructAccount, { duration }: {
-    duration: number
-  }): Promise<void> {
-    let _: PuppeteerBrowser = null
-    try {
-      if (this.poProcessedMemory.has(account.shopid)) return
-      this.polog(account, 'Start for processing')
-      if (!account.authenticated) { throw new Error('Unauthenticated') }
-      if (account.moderated) { throw new Error('Moderated') }
-      this.polog(account, 'Refreshing monitoring data')
-      await this.monitoring.refresh(account)
-      const { browser, page } = await this.browser.getBrowser(`FixPOAndPrice_${account.shopid}`, ['--no-sandbox', '--disable-setuid-sandbox', '--start-maximized'])
-      _ = browser
-      browser.on('disconnect', () => {
-        throw new Error("Browser disconnected!")
-      })
-      await this.browser.clearData(page)
-      // @ts-ignore
-      await page.setCookie(...account.cookies)
-      // Make sure this account is not logout
-      await this.browser.navigatePage(page, 'view-source:https://www.tokopedia.com/user/settings')
-      const url = await page.url()
-      if (url.includes('login')) {
-          await this.login([account.id], `login_${account.id}`)
-          account = await this.get(account.id, true)
-          // @ts-ignore
-          await page.setCookie(...account.cookies)
-      }
-      // @ts-ignore
-      await page.setCookie(...account.cookies)
-      this.polog(account, 'Downloading the basic information')
-      const templateBasicInformationPath = await this.downloadBasicInformation(page, account)
-      this.polog(account, 'Basic template is already downloaded, extracting...')
-      const basicInformationFiles = await this.extractTemplate(templateBasicInformationPath)
-      this.polog(account, 'Basic information file extracted, editing...')
-      for (const file of basicInformationFiles) {
-        await this.editPOFile(file, duration, account.shopid)
-      }
-      this.polog(account, `${basicInformationFiles.length} file has been edited, uploading...`)
 
-      await page.emulate({
-        viewport: {
-          deviceScaleFactor: 0.6,
-          width: 1280,
-          height: 800
-        },
-        userAgent: ''
-      })
-
-      page.evaluateOnNewDocument(() => {
-        setInterval(() => {
-          const docs = [
-            ...document.querySelectorAll('*[label*="overlay"]'),
-            ...document.querySelectorAll('*[aria-label*="overlay"]'),
-            ...document.querySelectorAll('.css-12kppra')
-          ]
-          for (const doc of docs) {
-            doc.remove()
-          }
-        }, 500)
-      })
-
-      // Upload file and wait until finished
-      for (const file of basicInformationFiles) {
-        this.polog(account, 'Uploading file: ' + file)
-        while (!page.isClosed()) {
-          try {
-            await this.browser.navigatePage(page, 'https://seller.tokopedia.com/bulk/edit?type=SELLABLE');
-            const url = await page.url()
-            if(url.includes('login')) {
-              await browser.close()
-              return
-            }
-            await page.waitForSelector('input[type="file"]', { timeout: 20000 });
-            (await page.$('input[type="file"]')).uploadFile(file)
-            await page.waitForSelector('xpath///span[contains(text(), "Upload")]', { timeout: 20000, visible: true })
-            break
-          } catch (err: any) { }
-        }
-        await new Promise(r => setTimeout(r, 1000))
-        const uploadBtn = await page.waitForSelector('xpath///span[contains(text(), "Upload")]', { timeout: 0, visible: true })
-        await uploadBtn.click()
-        await page.waitForSelector('div[role="alert"]', { timeout: 0, visible: true, hidden: false })
-        fs.unlinkSync(file)
-      }
-      this.poProcessedMemory.add(account.shopid)
-    } catch (err: any) {
-      console.error(err)
-      console.error(chalk.red.bold(`Failed for process account: ${account.email} <${err.message || err}>`))
-    } finally {
-      if (_) {
-        try {
-          await _.process().kill()
-        } catch (err) { }
-        try {
-          await _.close()
-        } catch (err) { }
-      }
-      this.polog(account, 'COMPLETED!')
-    }
-  }
-
-  public async FixPOAndPriceMain(): Promise<void> {
-    const all = shuffleArray(await this.all()).filter(x => x.authenticated)
-    const queue = new Queue({ results: [], autostart: true, concurrency: 5, timeout: 350000 })
-    let finish = 0
-    console.log(`${finish}/${all.length}`)
-
-    queue.addEventListener('success', () => {
-      finish++
-      console.log(`${finish}/${all.length}`)
-    })
-
-    for (const account of all) {
-      const task = async () => {
-        await this.fixSinglePO(account, { duration: 25 })
-      }
-      queue.push(task)
-    }
-  }
-  
   public async detectLogoutandLogin(): Promise<void> {
     const accounts = await this.all()
     const { page, browser } = await this.browser.getBrowser('detlogoutlogin', [])

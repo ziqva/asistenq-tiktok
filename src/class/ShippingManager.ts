@@ -30,7 +30,7 @@ export default class ShippingManager {
     for (const account of this.monitoring.mainData) {
       if (
         account.authenticated &&
-        account.shopid != 0 &&
+        account.shopid !== "" &&
         account.shopid !== null &&
         account.cookies
       ) {
@@ -132,7 +132,7 @@ export default class ShippingManager {
     this.logs = []
     for (const accountId of accountIds) {
       const det = await this.account.get(accountId, true)
-      if (det.authenticated && det.shopid != 0 && det.shopid !== null && det.cookies) {
+      if (det.authenticated && det.shopid != "" && det.shopid !== null && det.cookies) {
         try {
           const rawCookies = this.parseCookiesToRaw(det.cookies)
           const headers = {

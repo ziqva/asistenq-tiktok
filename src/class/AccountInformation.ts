@@ -123,33 +123,9 @@ export default class AccountInformation {
         payloads.push(this.getSellerBalancePayload()); // balance }
       this.mainDataColumn.isActiveByName("Chat") === true &&
         payloads.push(this.getChatPayload()); // chat count, oldest chat epoch }
-      payloads.push(this.getAllOrderPayload(account.shopid, 1));
-      this.mainDataColumn.isActiveByName("Status") &&
-        payloads.push(this.getModerasiPayload(account.shopid));
-      this.mainDataColumn.isActiveByName("Bank") &&
-        payloads.push(this.getBankPayload());
-      this.mainDataColumn.isActiveByName("Ongkir") &&
-        payloads.push(this.getFreeOngkirPayload(account.shopid));
-      this.mainDataColumn.isActiveByName("PM") &&
-        payloads.push(this.getPowerMerchantPayload(account.shopid));
-      this.mainDataColumn.isActiveByName("Product") &&
-        payloads.push(this.getProductCountPayload(account.shopid));
-      this.mainDataColumn.isActiveByName("Product") &&
-        payloads.push(this.getProductMetaPayload(account.shopid));
-      this.mainDataColumn.isActiveByName("Account") &&
-        payloads.push(this.getBadgePayload(account.shopid));
-      this.mainDataColumn.isActiveByName("Discus") &&
-        payloads.push(this.getDiscusPayload());
-      this.mainDataColumn.isActiveByName("Account") &&
-        payloads.push(this.getLocationPayload(account.shopid));
-      payloads.push(this.getSetOnlinePayload());
-      this.mainDataColumn.isActiveByName("PM") &&
-        payloads.push(this.getPMNamePayload(account.shopid));
-      this.mainDataColumn.isActiveByName('PM') && payloads.push(this.getPMRevoked(account.shopid))
-
 
       const rawCookies: string = this.parseCookiesToRaw(account.cookies);
-      if (account.shopid <= 0) {
+      if (account.shopid === "") {
         account.authenticated = false;
         await this.account.setAuthenticated(account.id, false);
       }
@@ -200,17 +176,6 @@ export default class AccountInformation {
         account = this.setupBalance(account, data);
         account = this.setupChat(account, data);
         account = this.setupAllOrders(account, data);
-        account = this.setupModerated(account, data);
-        account = this.setupBank(account, data);
-        account = this.setupFreeOngkir(account, data);
-        account = this.setupPowerMerchant(account, data);
-        account = this.setupProductCount(account, data);
-        account = this.setupBadge(account, data);
-        account = this.setupDiscus(account, data);
-        account = this.setupLocation(account, data);
-        account = this.setupPMName(account, data);
-        account = this.setupProductMeta(account, data);
-        account = this.setupPMRevoked(account, data)
         account.lastUpdated = moment().tz(this.tz).unix();
         if (autoUpdate && database) {
           this.updateData(account, database);
@@ -221,52 +186,6 @@ export default class AccountInformation {
       console.error(err);
       return account;
     }
-  }
-  setupProductMeta(account: StructAccount, data: any): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.ProductListMeta) {
-        const tabs: any = item.data.ProductListMeta.data.tab;
-        const activeProduct = tabs.find((x: any) => x.id === "ACTIVE");
-        const violationProduct = tabs.find((x: any) => x.id === "VIOLATION");
-        const archivedProduct = tabs.find(
-          (x: any) => x.id === "isProductArchival",
-        );
-        const inactiveProduct = tabs.find((x: any) => x.id === "INACTIVE");
-
-        account.activeProduct = activeProduct ? activeProduct.value : 0;
-        account.violationProduct = violationProduct
-          ? violationProduct.value
-          : 0;
-        account.archivedProduct = archivedProduct ? archivedProduct.value : 0;
-        account.inactiveProduct = inactiveProduct ? inactiveProduct.value : 0;
-      }
-    }
-    return account;
-  }
-
-  setupPMRevoked(account: StructAccount, data: any): StructAccount {
-    for(const item of data) {
-      if(!item.errors && item.data.goldGetPMShopInfo) {
-        const mainData: any = item.data.goldGetPMShopInfo
-        account.pmRevoked = account.pmName === 'power merchant' &&
-                            !mainData.is_kyc ? 1 : 0
-      }
-    }
-    return account
-  }
-
-  setupPMName(account: StructAccount, data: any): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.shopInfoByID) {
-        try {
-          const title = item.data.shopInfoByID.result[0].goldOS.title;
-          if (typeof title === "string") {
-            account.pmName = title.toLowerCase();
-          }
-        } catch (err) {}
-      }
-    }
-    return account;
   }
 
   formatWithtype(v: any): string {
@@ -292,190 +211,6 @@ export default class AccountInformation {
             WHERE id = "${account.id}"
         `;
     await database.query(sql);
-  }
-
-  setupDiscus(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.discussionSellerDesktopInbox) {
-        try {
-          const disData: any = item.data.discussionSellerDesktopInbox;
-          if (disData.unrespondedTotal > account.discusCount) {
-            const diffCount: number =
-              disData.unrespondedTotal - account.discusCount;
-            const msg: string = `${diffCount} diskusi baru`;
-            const title =
-              `${account.name}` +
-              (this.account.getFirstGroupName(account.id)
-                ? ` - ${this.account.getFirstGroupName(account.id)}`
-                : "");
-            this.notification.show({ title, message: msg });
-          }
-          account.discusCount = disData.unrespondedTotal;
-        } catch (err) {
-          console.error("failed for get the discus data: ", err);
-        }
-      }
-    }
-    return account;
-  }
-
-  setupBadge(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.reputation_shops) {
-        try {
-          const reputation: any = item.data.reputation_shops;
-          account.badgeImage = reputation[0].badge;
-        } catch (err) {
-          console.error(`failed get badge of account: ${account.name}`);
-        }
-      }
-    }
-    return account;
-  }
-
-  setupProductCount(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.ProductAddRule) {
-        try {
-          const meta: any = item.data.ProductAddRule;
-          account.productCount = meta.data.eligible.totalProduct;
-          account.productSpace = meta.data.eligible.limit;
-        } catch (err) {
-          console.error(`Failed for get the product count:`, err);
-        }
-      }
-    }
-    return account;
-  }
-
-  setupLocation(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      try {
-        if (
-          item.data.ShopLocGetAllLocations &&
-          item.data.ShopLocGetAllLocations.status === 200
-        ) {
-          const locations: any[] =
-            item.data.ShopLocGetAllLocations.data.warehouses.filter(
-              (x: any) => x.status === 1,
-            );
-          if (locations.length < 1) {
-            account.location = "";
-          } else {
-            const location: any = locations[0];
-            account.location = location.city_name;
-          }
-        }
-      } catch (err) {}
-    }
-    return account;
-  }
-
-  setupPowerMerchant(account: StructAccount, data: any[]): StructAccount {
-    if (account.moderated) {
-      account.pmImage = "";
-    }
-    for (const item of data) {
-      if (!item.errors && item.data.goldGetPMGradeBenefitInfo) {
-        try {
-          const info: any = item.data.goldGetPMGradeBenefitInfo;
-          account.score = info.potential_pm_grade.shop_score;
-        } catch (err) {}
-      }
-      if (!item.errors && item.data.shopInfoByID) {
-        try {
-          const badge: string = item.data.shopInfoByID.result[0].goldOS.badge;
-          account.pmImage = badge;
-        } catch (err) {}
-      }
-    }
-    return account;
-  }
-
-  setupFreeOngkir(account: StructAccount, data: any[]): StructAccount {
-    if (account.moderated) {
-      account.freeOngkir = false;
-      return account;
-    }
-    for (const item of data) {
-      if (!item.errors && item.data.restrictValidateRestriction) {
-        try {
-          const status: string =
-            item.data.restrictValidateRestriction.metaResponse[0]
-              .dataResponse[0].status;
-          account.freeOngkir = status === "eligible";
-        } catch (err) {
-          console.error("failed for get the free ongkir", err);
-          account.freeOngkir = false;
-        }
-      }
-    }
-    return account;
-  }
-
-  setupBank(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.GetBankAccount) {
-        const banks: any[] = item.data.GetBankAccount.data.bankAccounts;
-        if (banks.length < 1) {
-          account.bankAN = "";
-          account.bankNumber = "";
-          account.bankName = "";
-        } else {
-          account.bankAN = banks[0]?.accName;
-          account.bankNumber = banks[0]?.accNumber;
-          account.bankName = banks[0]?.bankName;
-        }
-      }
-    }
-    return account;
-  }
-
-
-  setupModerated(account: StructAccount, data: any[]): StructAccount {
-    let setted: boolean = false;
-    const moderatedBefore = account.moderated;
-    for (const item of data) {
-      if (!item.errors && item.data.shopInfoByID) {
-        try {
-          try {
-            let statusMsg: string | null = item.data.shopInfoByID.result[0].statusInfo.statusMessage
-            if(typeof statusMsg === 'string') {
-              const html = `<div id="root">${statusMsg}</div>`
-              const compiler = compile({  })
-              statusMsg = compiler(html).split("'").join('').split('"').join('').trim()
-              account.statusMessage = statusMsg.length < 1 ? null : statusMsg
-            }
-          } catch(err: any) {
-            console.error(err.message || err)
-          }
-          const moderatedStatus: number[] = [3, 5];
-          const status: number =
-            item.data.shopInfoByID.result[0].statusInfo.shopStatus;
-          if (moderatedStatus.includes(status)) {
-            account.moderated = true;
-            setted = true;
-          }
-        } catch (err) {
-          console.error(err);
-        }
-      }
-    }
-    if (!setted) {
-      account.moderated = false;
-    }
-    if (account.moderated && account.moderated !== moderatedBefore) {
-      const title =
-        `${account.name}` +
-        (this.account.getFirstGroupName(account.id)
-          ? ` - ${this.account.getFirstGroupName(account.id)}`
-          : "");
-      this.notification.show({
-        title,
-        message: `Status akun: moderasi`,
-      });
-    }
-    return account;
   }
 
   private filterNewOrderFromPackings(orders: any): any[] {
@@ -852,18 +587,6 @@ export default class AccountInformation {
     };
   }
 
-  getPMRevoked(shopid: number): any {
-    return {
-        "operationName": "getPMOSStatus",
-        "variables": {
-          "shopID": shopid,
-          "source": "seller-sidebar",
-          "lang": "id",
-          "device": "1,2,3,4,5,6,7,8,15"
-        },
-        "query": "query getPMOSStatus($shopID: Int!, $source: String!, $lang: String, $device: String) {\n  goldGetPMShopInfo(shop_id: $shopID, source: $source, lang: $lang, device: $device, filter: {including_pm_pro_eligibility: true}) {\n    isNewSeller: is_new_seller\n    kyc_status_id\n    is_kyc\n    is_eligible_pm\n    is_eligible_pm_pro\n    __typename\n  }\n  goldGetPMOSStatus(shopID: $shopID, includeOS: false) {\n    data {\n      powerMerchant: power_merchant {\n        pmTier: pm_tier\n        status\n        __typename\n      }\n      __typename\n    }\n    __typename\n  }\n}\n"
-      }
-  }
 
   getPMNamePayload(shopid: number): any {
     return {

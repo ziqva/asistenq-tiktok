@@ -200,7 +200,8 @@ export default class PublicMonitoring {
         data.numbers.logout = md.filter(x => !x.authenticated).length
         for(const item of md) {
             data.numbers.chat+= item.chatCount
-            data.numbers.discus+= item.discusCount
+            // data.numbers.discus+= item.discusCount
+            data.numbers.discus+= 0
             data.numbers.order+= item.orderCount
             data.numbers.processing+= item.dikemasCount
             data.numbers.shipping+= item.dikirimCount
@@ -246,19 +247,20 @@ export default class PublicMonitoring {
         // End of push the chat data
 
         // Push the discus count data
-        data.discuses = md
-            .filter(x => x.discusCount > 0)
-            .map(x => {
-                return {
-                    name: x.name,
-                    email: x.email,
-                    avatar: x.avatar,
-                    count: x.discusCount,
-                    groups: x.groupNames
-                    .split(',').map(x => x.trim().toLowerCase())
-                    .filter(x => x.length > 0)
-                }
-            })
+        // data.discuses = md
+        //     .filter(x => x.discusCount > 0)
+        //     .map(x => {
+        //         return {
+        //             name: x.name,
+        //             email: x.email,
+        //             avatar: x.avatar,
+        //             count: x.discusCount,
+        //             groups: x.groupNames
+        //             .split(',').map(x => x.trim().toLowerCase())
+        //             .filter(x => x.length > 0)
+        //         }
+        //     })
+        data.discuses = []
         // End of push the new orders data
 
         // Push the order processing order (packing)

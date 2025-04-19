@@ -241,23 +241,24 @@ export default class Monitoring {
    * @returns {void}
    */
   private initFilterPmType(): void {
-    let pmType = this.pmType.types.map((x) => {
-      x.count = 0;
-      return x;
-    });
-    for (let md of this.mainData) {
-      // check name is already exists on pmType
-      if (md.pmName === "") {
-        md.pmName = "Other";
-      }
-      if (pmType.findIndex((x) => x.name === md.pmName) < 0) {
-        // if not exists push it for initialize
-        pmType.push({ name: md.pmName, count: 0, active: true });
-      }
-      const i: number = pmType.findIndex((x) => x.name === md.pmName);
-      pmType[i].count++;
-    }
-    this.pmType.types = pmType;
+    return 
+    // let pmType = this.pmType.types.map((x) => {
+    //   x.count = 0;
+    //   return x;
+    // });
+    // for (let md of this.mainData) {
+    //   // check name is already exists on pmType
+    //   if (md.pmName === "") {
+    //     md.pmName = "Other";
+    //   }
+    //   if (pmType.findIndex((x) => x.name === md.pmName) < 0) {
+    //     // if not exists push it for initialize
+    //     pmType.push({ name: md.pmName, count: 0, active: true });
+    //   }
+    //   const i: number = pmType.findIndex((x) => x.name === md.pmName);
+    //   pmType[i].count++;
+    // }
+    // this.pmType.types = pmType;
   }
 
   /**
@@ -320,13 +321,13 @@ export default class Monitoring {
    * @return {number} The sort order for the PM status column.
    */
  private getPMSort(acc: StructAccount): number {
-  const name = acc.pmName.toLowerCase().trim() 
-  if(acc.pmRevoked === 0 && name === 'power merchant pro') return 7
-  if(acc.pmRevoked === 1 && name === 'power merchant pro') return 6
-  if(acc.pmRevoked === 0 && name === 'power merchant') return 5
-  if(acc.pmRevoked === 1 && name === 'power merchant') return 4
-  if(acc.pmRevoked === 0 && name === 'regular merchant') return 3
-  if(acc.pmRevoked === 1 && name === 'regular merchant') return 2
+  // const name = acc.pmName.toLowerCase().trim() 
+  // if(acc.pmRevoked === 0 && name === 'power merchant pro') return 7
+  // if(acc.pmRevoked === 1 && name === 'power merchant pro') return 6
+  // if(acc.pmRevoked === 0 && name === 'power merchant') return 5
+  // if(acc.pmRevoked === 1 && name === 'power merchant') return 4
+  // if(acc.pmRevoked === 0 && name === 'regular merchant') return 3
+  // if(acc.pmRevoked === 1 && name === 'regular merchant') return 2
   return 1
 }
 
@@ -540,7 +541,8 @@ private getStatusSort(account: StructAccount): number {
       mainSidebar.dikemasPotency += item.dikemasPotency;
       mainSidebar.dikirimPotency += item.dikirimPotency;
       mainSidebar.complaintPotency += item.complaintPotency;
-      mainSidebar.discusCount += item.discusCount;
+      mainSidebar.discusCount += 0;
+      // mainSidebar.discusCount += item.discusCount;
       mainSidebar.orderCount += item.orderCount;
       mainSidebar.dikemasCount += item.dikemasCount;
       mainSidebar.dikirimCount += item.dikirimCount;
@@ -604,12 +606,12 @@ private getStatusSort(account: StructAccount): number {
         num: i + 1,
       };
     });
-    if (!this.pmType.activeForAll) {
-      const names: string[] = this.pmType.types
-        .filter((x) => x.active)
-        .map((x) => x.name);
-      tmp = tmp.filter((tm) => names.includes(tm.pmName));
-    }
+    // if (!this.pmType.activeForAll) {
+    //   const names: string[] = this.pmType.types
+    //     .filter((x) => x.active)`
+    //     .map((x) => x.name);
+    //   tmp = tmp.filter((tm) => names.includes(tm.pmName));
+    // }
     this.sendMainLeftDataSidebar(<StructAccount[]>tmp);
     if (this.activeFilter === "loggedin") {
       tmp = tmp.filter((x) => x.authenticated);
@@ -622,7 +624,8 @@ private getStatusSort(account: StructAccount): number {
     } else if (this.activeFilter === "chat") {
       tmp = tmp.filter((x) => x.chatCount > 0);
     } else if (this.activeFilter === "discus") {
-      tmp = tmp.filter((x) => x.discusCount > 0);
+      // tmp = tmp.filter((x) => x.discusCount > 0);
+      tmp = []
     } else if (this.activeFilter === "order") {
       tmp = tmp.filter((x) => x.orderCount > 0);
     } else if (this.activeFilter === "packing") {

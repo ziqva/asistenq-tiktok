@@ -99,10 +99,10 @@ export default class Recorder {
                 useAuthenticator: x.useAuthenticator,
                 authenticator: x.secretAutenticator,
                 shopid: x.shopid,
-                state: x.pmName,
-                activeProduct: x.activeProduct,
+                state: '--unknown-tiktok--',
+                activeProduct: 1,
                 moderated: x.moderated,
-                score: x.score,
+                score: 1,
                 cookies: cookies
               }
             })
