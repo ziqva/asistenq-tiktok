@@ -13,7 +13,6 @@ import BankCell from "./cell/Bank";
 import Ongkir from "./cell/Ongkir";
 import SkorCell from "./cell/Skor";
 import StatusCell from "./cell/Status";
-import PMCell from "./cell/PM";
 import ProductCell from "./cell/Product";
 import ActionCell from "./cell/Action";
 import SelectionCheckState from "./SelectionCheckState";
@@ -358,29 +357,6 @@ export default function MainDataController({
         if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         // return (a.moderated ? 1 : 0 - b.moderated ? 1 : 0)
         return a.statusSort - b.statusSort
-      },
-    },
-    {
-      title: "PM",
-      align: "center",
-      width: 60,
-      render: (data) => (
-        <PMCell
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(
-              id,
-              "https://seller.tokopedia.com/settings/power-merchant"
-            )
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        const aat = a.pinnedAt | 0
-        const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        // return a.pmName.length - b.pmName.length
-        return a.pmSort - b.pmSort
       },
     },
     {
