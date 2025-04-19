@@ -831,7 +831,7 @@ export default class Account {
     await page.setUserAgent(this.loginUseragent);
     await this.browser.navigatePage(
       page,
-      "https://mitra.tokopedia.com/login",
+      "https://seller-id.tokopedia.com/account/login",
       30
     );
     const els = {
@@ -842,6 +842,7 @@ export default class Account {
       authenticatorMethodItem: "section[data-unify]",
       otpField: 'input[aria-label="otp input"]:not(:disabled)',
       authenticated: '[data-testid="divHomeHomeWrapper"]',
+      loginWithEmail: "#TikTok_Ads_SSO_Login_Email_Panel_Button"
     };
     // controller.signal.addEventListener("abort", () => {
     //   throw new Error(controller.signal.reason);
@@ -852,6 +853,9 @@ export default class Account {
     // });
     // wait until email input element is presented
     console.log("Waiting for email element");
+    const loginWithEmail = await page.waitForSelector(els.loginWithEmail, { timeout: 0, visible: true })
+    await loginWithEmail.click()
+
     const emailField = await page.waitForSelector(els.emailField, {
       timeout: 0,
       visible: true,
