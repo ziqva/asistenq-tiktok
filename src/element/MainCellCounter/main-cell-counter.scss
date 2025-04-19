@@ -1,0 +1,31 @@
+:root {
+    --main-cell-counter-green-color: #00AA5B;
+    --main-cell-counter-green-bg: #C9FDE0;
+}
+
+.main-cell-counter.element {
+  font-weight: 500;
+  font-size: 14px;  
+  width: fit-content;
+  display: flex;
+  margin: auto;
+  padding: 0px 6px;
+  border-radius: 4px;
+  height: 15px;
+  align-items: center;
+
+  &[data-green="true"] {
+    background: var(--main-cell-counter-green-bg);
+    color: var(--main-cell-counter-green-color);
+  }
+
+  &[data-orange="true"] {
+    background: var(--orange-tokped-bg);
+    color: var(--orange-tokped-color);
+  }
+
+  &[data-red="true"] {
+    background: var(--red-tokped-bg);
+    color: var(--red-tokped-color);
+  }
+}

@@ -1,0 +1,120 @@
+.updater-dialog.element {
+    .toggle-btn-container {
+        position: relative;
+        display: flex;
+        width: fit-content;
+        height: fit-content;
+        margin-right: -10px;
+
+        
+        sup {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+        }
+    }   
+}
+
+// dialog
+.the-dialog-of-update {
+    .title {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .update-list {
+        width: 300px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        background: #fff;
+        padding: 6px 10px;
+        border-radius: 9px;
+        overflow-x: hidden;
+
+        .update {
+            display: flex;
+            flex-direction: column;
+            overflow-x: hidden;
+            border: 1px solid transparent;
+            padding: 6px 10px;
+            border-radius: 8px;
+            transition: .1s ease all;
+            position: relative;
+            
+
+            &:hover {
+                border: 1px solid var(--main-color);
+                .right {
+                    .date {
+                        display: none;
+                    }
+                }
+                .update-btn {
+                    display: flex;
+                    width: fit-content;
+                    position: absolute;
+                    right: 0;
+                    top: 0;
+
+                    &:hover * {
+                        text-decoration: underline;
+                    }
+                }
+            }
+
+            .update-btn {
+                display: none;
+            }
+
+            .version {
+                color: var(--main-color);
+                font-weight: 500;
+                font-size: 14px;
+            }
+
+            .head {
+                display: flex;
+                align-items: center;
+                width: 100%;
+
+                .right {
+                    display: flex;
+                    width: fit-content;
+                    margin-left: auto;
+                    margin-right: 0;
+
+                    .date {
+                        color: dimgray;
+                        font-weight: 400;
+                        font-style: italic;
+                        font-size: 12px;
+                    }
+                }
+            }
+
+            .notes {
+                display: flex;
+                flex-direction: column;
+                gap: 3px;
+                font-size: 13px;
+                margin-top: 10px;
+
+                .note {
+                    display: flex;
+                    gap: 10px;
+
+                    .note-text {
+                        margin-top: 3px;
+                    }
+
+                    img {
+                        width: 20px;
+                        height: 20px;
+                    }
+                }
+            }
+        }
+    }
+}
