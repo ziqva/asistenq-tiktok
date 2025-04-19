@@ -21,3 +21,4 @@ memory_data
 ./memory_data
 *.zip
 ._*
+.DS_Store
