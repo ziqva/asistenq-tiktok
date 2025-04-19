@@ -764,23 +764,11 @@ export default class Account {
                 dikirimPotency INTEGER,
                 complaintCount INTEGER,
                 complaintPotency INTEGER,
-                bankName TEXT,
-                bankNumber TEXT,
-                bankAN TEXT,
-                freeOngkir BOOLEAN,
-                powerMerchant BOOLEAN,
                 productCount INTEGER,
-                score INTEGER,
                 groupNames TEXT,
-                discusCount INTEGER,
                 warning BOOLEAN,
-                shopid INTEGER,
+                shopid TEXT,
                 authenticated BOOLEAN,
-                location VARCHAR(255),
-                pmImage VARCHAR(255),
-                badgeImage VARCHAR(255),
-                pmName VARCHAR(255),
-                productSpace INTEGER,
                 pinned INT(1),
                 pinnedAt INTEGER
             )
@@ -789,36 +777,6 @@ export default class Account {
 
     // Create a more column
     const data: AccountInitDBAddColumn[] = [
-      {
-        name: "activeProduct",
-        type: "INT(11)",
-        allowNull: false,
-        default: 0,
-      },
-      {
-        name: "violationProduct",
-        type: "INT(11)",
-        allowNull: false,
-        default: 0,
-      },
-      {
-        name: "archivedProduct",
-        type: "INT(11)",
-        allowNull: false,
-        default: 0,
-      },
-      {
-        name: "inactiveProduct",
-        type: "INT(11)",
-        allowNull: false,
-        default: 0,
-      },
-      {
-        name: "productSpace",
-        type: "INTEGER",
-        allowNull: false,
-        default: 0
-      },
       {
         name: "pinned",
         type: "INT(1)",
@@ -836,12 +794,6 @@ export default class Account {
         type: "STRING",
         allowNull: true,
         default: null
-      },
-      {
-        name: "pmRevoked",
-        type: "INTEGER",
-        allowNull: false,
-        default: 0
       },
       {
         name: "pmSort",
