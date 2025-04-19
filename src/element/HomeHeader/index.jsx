@@ -68,7 +68,7 @@ export default function HomeHeader({
       <div className="right-components">
         <News />
         <MassUpdateGroup useSelection={useSelection} selecteds={selectedRows} />
-        <PMType data-aos="fade-left" data-aos-duration={300} />
+        {/* <PMType data-aos="fade-left" data-aos-duration={300} /> */}
         <Group data-aos="fade-left" data-aos-duration={400} />
         <Import data-aos="fade-left" data-aos-duration={500} />
         <Export

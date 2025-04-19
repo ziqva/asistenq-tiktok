@@ -106,6 +106,8 @@ export default function FreeFeature({ selectedIds, ...args }) {
     ]);
   }, [selectedIds]);
 
+  return (<></>)
+
   return (
     <div className="free-feature element" {...args}>
       <Dropdown menu={{ items }}>

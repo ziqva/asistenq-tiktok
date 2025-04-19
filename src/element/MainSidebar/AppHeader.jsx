@@ -15,7 +15,7 @@ export default function AppHeader() {
       <img src={icon} alt="AsistenQ" draggable="false" />
       {/* <img className="ketupat-attr" src={ketupat} alt="" draggable={false} /> */}
       <div className="name">
-        <div className="bold">AsistenQ</div>
+        <div className="bold">AsistenQ Tiktok</div>
         <div className="italic">By ZIQVA LABS</div>
       </div>
     </div>
