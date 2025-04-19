@@ -1,7 +1,7 @@
 {
-  "name": "asistenq",
+  "name": "asistenq-tiktok",
   "version": "1.9.81",
-  "description": "A minimal application but lot of feature for monitor the Tokopedia accounts in one app and bundled with additional tool (ziqva.com)",
+  "description": "A minimal application but lot of feature for monitor the Tiktok Shop accounts in one app and bundled with additional tool (ziqva.com)",
   "main": "./dist/index.js",
   "scripts": {
     "build": "bun tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y && xcopy src\\controller\\frontend dist\\controller\\frontend /s /e /h /y && xcopy src\\sounds dist\\sounds /s /e /h /y",
@@ -18,7 +18,7 @@
     "publish": "npm run build:prod && xcopy /y package.json dist && npx electron-builder -p always"
   },
   "build": {
-    "appId": "com.ziqvalabs.asistenq",
+    "appId": "com.ziqvalabs.asistenq-tiktok",
     "productName": "AsistenQ",
     "copyright": "Copyright © 2023 Ziqva Labs",
     "compression": "maximum",
@@ -208,5 +208,6 @@
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
     "xmlhttprequest": "^1.8.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

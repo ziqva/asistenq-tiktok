@@ -1,6 +1,6 @@
 const config: Config = {
     product: {
-        name: "AsistenQ",
+        name: "AsistenQ-Tiktok",
         buildNumber: 1
     }
 }

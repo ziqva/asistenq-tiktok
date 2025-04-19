@@ -15,8 +15,8 @@ export default class Memory {
         this.saveInterval = saveInterval
         this.type = type
         const dir = process.platform === 'darwin' 
-            ? path.join(process.env.HOME, 'Library', 'Application Support', 'asistenq-memory-data')
-            : path.join(process.env.APPDATA, 'asistenq-memory-data')
+            ? path.join(process.env.HOME, 'Library', 'Application Support', 'asistenq-tiktok-memory-data')
+            : path.join(process.env.APPDATA, 'asistenq-tiktok-memory-data')
         if(!fs.existsSync(dir)) { fs.mkdirSync(dir) }
         this.filename = path.join(dir, `${prefix}_${type}.json`)
         if(!fs.existsSync(this.filename)) { fs.writeFileSync(this.filename, '[]', 'utf8') }

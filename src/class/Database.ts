@@ -11,9 +11,9 @@ export default class Database {
     
     constructor() {
         if (process.platform === 'darwin') {
-            this.dbPath = path.join(process.env.HOME, 'Library', 'Application Support', 'asistenq-owner-node-data.db');
+            this.dbPath = path.join(process.env.HOME, 'Library', 'Application Support', 'asistenq-tiktok-data.db');
         } else {
-            this.dbPath = path.join(process.env.APPDATA, 'asistenq-owner-node-data.db');
+            this.dbPath = path.join(process.env.APPDATA, 'asistenq-tiktok-data.db');
         }
         this.db = new sqlite3.Database(this.dbPath)
     }   
