@@ -154,6 +154,14 @@ declare global {
     statusMessage: string | null;
     pmSort: number;
     statusSort: number;
+    auth: {
+      fp: string | null;
+      oecSellerId: string | null;
+      aid: string | null;
+      msToken: string | null;
+      XBogus: string | null;
+      signature: string | null;
+    }
   }
 
   interface OpertionalScheduleAccount {

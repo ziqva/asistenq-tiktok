@@ -564,7 +564,15 @@ export default class Account {
       pinnedAt: null,
       statusMessage: null,
       pmSort: 0,
-      statusSort: 0
+      statusSort: 0,
+      auth: {
+        fp: null,
+        oecSellerId: null,
+        aid: null,
+        msToken: null,
+        XBogus: null,
+        signature: null
+      }
     };
 
     this.monitoring.mainData.push(account);
@@ -766,7 +774,13 @@ export default class Account {
         type: "INTEGER",
         allowNull: false,
         default: 0
-      }
+      },
+      { name: "auth_fp", type: 'string', allowNull: true, default: null, },
+      { name: "auth_oec_seller_id", type: 'string', allowNull: true, default: null, },
+      { name: "auth_aid", type: 'string', allowNull: true, default: null, },
+      { name: "auth_msToken", type: "string", allowNull: false, default: null },
+      { name: "auth_XBogus", type: 'string', allowNull: false, default: null },
+      { name: "auth_signature", type: 'string', allowNull: false, default: null }
     ];
 
     for (const row of data) {
@@ -1167,7 +1181,15 @@ export default class Account {
         pinnedAt: row?.pinnedAt,
         statusMessage: row?.statusMessage === 'null' ? null : row?.statusMessage,
         pmSort: row?.pmSort,
-        statusSort: row?.statusSort
+        statusSort: row?.statusSort,
+        auth: {
+          fp: row?.auth_fp,
+          oecSellerId: row?.auth_oec_seller_id,
+          aid: row?.auth_aid,
+          msToken: row?.auth_msToken,
+          XBogus: row?.auth_XBogus,
+          signature: row?.auth_signature
+        }
       } as StructAccount);
     }
     return data;
@@ -1265,7 +1287,15 @@ export default class Account {
         pinnedAt: res?.pinnedAt,
         statusMessage: res?.statusMessage === 'null' ? null : res?.statusMessage,
         pmSort: res?.pmSort,
-        statusSort: res?.statusSort
+        statusSort: res?.statusSort,
+        auth: {
+          fp: res?.auth_fp,
+          oecSellerId: res?.auth_oec_seller_id,
+          aid: res?.auth_aid,
+          msToken: res?.auth_msToken,
+          XBogus: res?.auth_XBogus,
+          signature: res?.auth_signature
+        }
       };
       return acc;
     }
