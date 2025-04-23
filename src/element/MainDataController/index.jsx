@@ -75,7 +75,7 @@ export default function MainDataController({
           active={activeAccount === data.id}
           data={data}
           onClick={(id) =>
-            openBrowser.openBrowser(id, "https://seller.tokopedia.com")
+            openBrowser.openBrowser(id, "https://seller-id.tokopedia.com/homepage")
           }
         />
       ),
