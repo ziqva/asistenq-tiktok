@@ -97,7 +97,7 @@ export default function MainDataController({
         <ChatCell
           data={data}
           onClick={(id) =>
-            openBrowser.openBrowser(id, "https://seller.tokopedia.com/chat")
+            openBrowser.openBrowser(id, "https://seller-id.tokopedia.com/chat/inbox/current")
           }
         />
       ),

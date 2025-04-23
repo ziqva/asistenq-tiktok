@@ -1,5 +1,5 @@
 import MainCellCounter from "element/MainCellCounter"
-import moment from 'moment-timezone'
+// import moment from 'moment-timezone'
 import 'moment/locale/id'
 
 export default function Chat({data, onClick}) {
@@ -11,12 +11,12 @@ export default function Chat({data, onClick}) {
                 orange={data.chatCount >= 5 && data.chatCount < 10}
                 red={data.chatCount >= 10}
             />
-            <div className="ago">
+            {/* <div className="ago">
                 {moment(data.lastChatEpoch)
                 .tz('Asia/Jakarta')
                 .fromNow()
                 .replace('yang lalu', '')}
-            </div>
+            </div> */}
         </div>
     )
 }
