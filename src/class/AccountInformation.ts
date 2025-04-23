@@ -417,53 +417,14 @@ export default class AccountInformation {
    * @return {StructAccount} - The updated account with the chat information.
    */
   private async setupChat(account: StructAccount, headers: any): Promise<StructAccount> {
-    const timestamp = moment().tz("Asia/Jakarta").valueOf()
-    const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/user/mget_info_v2?PIGEON_BIZ_TYPE=1&oec_region=ID&aid=${account.auth.aid}&oec_seller_id=${account.auth.oecSellerId}&im_req_timestamp=${timestamp}&device_platform=pc&im_version_code=8136`
-    console.log(url)
+    const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
     const response = await fetch(url, {
-      method: "POST",
-      body: JSON.stringify({
-        imcloud_conversation_ids: ["7495587525894570258", "7493014065260167444", "7493015545076990216"],
-      }),
-      headers: {
-        ...headers,
-        'Content-Type': 'application/json'
-      }
+      headers
     })
     if(!response.ok) { return account }
     const data = await response.json()
-    console.log({data})
-    // for (const item of data) {
-    //   if (!item.errors && item.data.chatList) {
-    //     const chatListAttributes: any = item.data.chatList.list
-    //       .map((x: any) => x.attributes)
-    //       .filter((x: any) => x?.unreads > 0);
-    //     let targetChatCount = chatListAttributes.length;
-    //     if (targetChatCount > account.chatCount) {
-    //       const count: number = targetChatCount - account.chatCount;
-    //       const title =
-    //         `${account.name}` +
-    //         (this.account.getFirstGroupName(account.id)
-    //           ? ` - ${this.account.getFirstGroupName(account.id)}`
-    //           : "");
-    //       this.notification.show({
-    //         title,
-    //         message: `${count} Chat baru`,
-    //       });
-    //     }
-    //     account.chatCount = targetChatCount;
-    //     const lastReplyTimes: number[] = chatListAttributes.map((x: any) =>
-    //       parseInt(x?.lastReplyTime),
-    //     );
-    //     let lastReplyTime = 0;
-    //     for (const lrt of lastReplyTimes) {
-    //       if (lrt < lastReplyTime || lastReplyTime === 0) {
-    //         lastReplyTime = lrt;
-    //       }
-    //     }
-    //     account.lastChatEpoch = lastReplyTime;
-    //   }
-    // }
+    account.lastChatEpoch = 0
+    account.chatCount = data.data.unresponsive_conversation_count
     return account;
   }
 
