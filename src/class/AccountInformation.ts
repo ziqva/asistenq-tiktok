@@ -477,7 +477,8 @@ export default class AccountInformation {
     })
     if(!response.ok) { return account }
     const data: any = await response.json()
-    console.log({data})
+    const profileUrl = data.data.seller.logo.url_list[0]
+    account.avatar = profileUrl
     return account;
   }
 
