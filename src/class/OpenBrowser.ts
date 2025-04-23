@@ -253,7 +253,6 @@ export default class OpenBrowser {
     try {
       await this.page.goto("about:blank");
     } catch (err) {
-      const requireSecured = targetUrl.includes("/payment/deposit");
       const { browser, page } = await this.browserEngine.getBrowser(
         "open-browser",
         [
