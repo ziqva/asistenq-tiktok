@@ -955,7 +955,6 @@ export default class Account {
         const cookies = await page.cookies()
         const rawCookies = this.parseCookiesToRaw(cookies)
         const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
-        console.log({sellerId})
         await this.setCookies(id, cookies)
         await this.setShopId(sellerId, id)
         await this.setAuthenticated(id, true)
@@ -984,7 +983,7 @@ export default class Account {
     await this.db.query(`
         UPDATE account SET 
           auth_fp = '${params.fp}',
-          auth_oec_seller_id = '${params.oecSellerId}',
+          auth_oec_seller_id = '-${params.oecSellerId}-',
           auth_aid = '${params.aid}',
           auth_msToken = '${params.msToken}',
           auth_XBogus = '${params.XBogus}',
@@ -1219,14 +1218,15 @@ export default class Account {
         statusSort: row?.statusSort,
         auth: {
           fp: row?.auth_fp,
-          oecSellerId: row?.auth_oec_seller_id,
+          oecSellerId: `${row?.auth_oec_seller_id?.split('-')?.join('')}`,
           aid: row?.auth_aid,
           msToken: row?.auth_msToken,
           XBogus: row?.auth_XBogus,
-          signature: row?.auth_signature
+          signature: row?.auth_signature,
         }
       } as StructAccount);
     }
+    console.log({data})
     return data;
   }
 
@@ -1325,7 +1325,7 @@ export default class Account {
         statusSort: res?.statusSort,
         auth: {
           fp: res?.auth_fp,
-          oecSellerId: res?.auth_oec_seller_id,
+          oecSellerId: res?.auth_oec_seller_id?.split('-')?.join(''),
           aid: res?.auth_aid,
           msToken: res?.auth_msToken,
           XBogus: res?.auth_XBogus,

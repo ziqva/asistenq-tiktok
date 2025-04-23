@@ -131,37 +131,27 @@ export default class AccountInformation {
       const headers = {
         cookie: rawCookies,
         accept: '*/*',
+        'sec-ch-ua': `"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"`,
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': `"macOS"`,
+        'sec-fetch-dest': 'empty',
+        'sec-fetch-mode': 'cors',
+        'sec-fetch-site': 'same-origin',
+        'x-tt-oec-region': 'ID',
+        'origin': 'https://seller-id.tokopedia.com',
+        'accept-encoding': 'gzip, deflate, br, zstd',
+        'accept-language': 'en-US,en;q=0.9,id;q=0.8',
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
       };
       
-     
-        // let setted = false;
-        // for (const item of data) {
-        //   if (setted) break;
-        //   if (item.errors) {
-        // for (const error of item.errors) {
-        //   if (
-        //     [
-        //       "User not login",
-        //       "your session has expired, please login again",
-        //     ].includes(error.message)
-        //   ) {
-        //     account.authenticated = false;
-        //   } else {
-        //     console.error(error.message);
-        //   }
-        // }
-        //   }
-        // }
-
-        account = await this.setupProfileDetail(account, headers);
-        // account = this.setupBalance(account);
-        // account = this.setupChat(account);
-        // account = this.setupAllOrders(account);
-        account.lastUpdated = moment().tz(this.tz).unix();
-        if (autoUpdate && database) {
-          this.updateData(account, database);
-        }
+      account = await this.setupProfileDetail(account, headers);
+      // account = this.setupBalance(account);
+      account = await this.setupChat(account, headers);
+      // account = this.setupAllOrders(account);
+      account.lastUpdated = moment().tz(this.tz).unix();
+      if (autoUpdate && database) {
+        this.updateData(account, database);
+      }
       return account;
     } catch (err: any) {
       console.error(err);
@@ -426,38 +416,54 @@ export default class AccountInformation {
    * @param {any[]} data - The data containing the chat list.
    * @return {StructAccount} - The updated account with the chat information.
    */
-  setupChat(account: StructAccount, data: any[]): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.chatList) {
-        const chatListAttributes: any = item.data.chatList.list
-          .map((x: any) => x.attributes)
-          .filter((x: any) => x?.unreads > 0);
-        let targetChatCount = chatListAttributes.length;
-        if (targetChatCount > account.chatCount) {
-          const count: number = targetChatCount - account.chatCount;
-          const title =
-            `${account.name}` +
-            (this.account.getFirstGroupName(account.id)
-              ? ` - ${this.account.getFirstGroupName(account.id)}`
-              : "");
-          this.notification.show({
-            title,
-            message: `${count} Chat baru`,
-          });
-        }
-        account.chatCount = targetChatCount;
-        const lastReplyTimes: number[] = chatListAttributes.map((x: any) =>
-          parseInt(x?.lastReplyTime),
-        );
-        let lastReplyTime = 0;
-        for (const lrt of lastReplyTimes) {
-          if (lrt < lastReplyTime || lastReplyTime === 0) {
-            lastReplyTime = lrt;
-          }
-        }
-        account.lastChatEpoch = lastReplyTime;
+  private async setupChat(account: StructAccount, headers: any): Promise<StructAccount> {
+    const timestamp = moment().tz("Asia/Jakarta").valueOf()
+    const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/user/mget_info_v2?PIGEON_BIZ_TYPE=1&oec_region=ID&aid=${account.auth.aid}&oec_seller_id=${account.auth.oecSellerId}&im_req_timestamp=${timestamp}&device_platform=pc&im_version_code=8136`
+    console.log(url)
+    const response = await fetch(url, {
+      method: "POST",
+      body: JSON.stringify({
+        imcloud_conversation_ids: ["7495587525894570258", "7493014065260167444", "7493015545076990216"],
+      }),
+      headers: {
+        ...headers,
+        'Content-Type': 'application/json'
       }
-    }
+    })
+    if(!response.ok) { return account }
+    const data = await response.json()
+    console.log({data})
+    // for (const item of data) {
+    //   if (!item.errors && item.data.chatList) {
+    //     const chatListAttributes: any = item.data.chatList.list
+    //       .map((x: any) => x.attributes)
+    //       .filter((x: any) => x?.unreads > 0);
+    //     let targetChatCount = chatListAttributes.length;
+    //     if (targetChatCount > account.chatCount) {
+    //       const count: number = targetChatCount - account.chatCount;
+    //       const title =
+    //         `${account.name}` +
+    //         (this.account.getFirstGroupName(account.id)
+    //           ? ` - ${this.account.getFirstGroupName(account.id)}`
+    //           : "");
+    //       this.notification.show({
+    //         title,
+    //         message: `${count} Chat baru`,
+    //       });
+    //     }
+    //     account.chatCount = targetChatCount;
+    //     const lastReplyTimes: number[] = chatListAttributes.map((x: any) =>
+    //       parseInt(x?.lastReplyTime),
+    //     );
+    //     let lastReplyTime = 0;
+    //     for (const lrt of lastReplyTimes) {
+    //       if (lrt < lastReplyTime || lastReplyTime === 0) {
+    //         lastReplyTime = lrt;
+    //       }
+    //     }
+    //     account.lastChatEpoch = lastReplyTime;
+    //   }
+    // }
     return account;
   }
 

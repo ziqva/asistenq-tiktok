@@ -1,4 +1,3 @@
-import { createConnection } from 'net';
 import * as path from 'path'
 import sqlite3 from 'sqlite3'
 
