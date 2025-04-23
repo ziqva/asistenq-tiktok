@@ -12,7 +12,7 @@ import * as exceljs from "exceljs";
 import { app, dialog } from "electron";
 import path from "path";
 import fs from "fs";
-import { Page, Puppeteer, Browser as PuppeteerBrowser } from "puppeteer";
+import { HTTPRequest, HTTPResponse, Page, Puppeteer, Browser as PuppeteerBrowser } from "puppeteer";
 import Setting from "./Setting";
 import Device from "./Device";
 import { authenticator } from "otplib";
@@ -29,6 +29,7 @@ import xlsx from 'xlsx'
 import Progress from 'cli-progress'
 import Memory from "./Memory";
 import moment from "moment";
+import queryString from "query-string";
 
 export default class Account {
   private db: Database;
@@ -849,14 +850,15 @@ export default class Account {
       30
     );
     const els = {
-      emailField: "input[name='login']",
+      emailField: 'input[name="email"][type="email"]',
       nextBtnFromEmail: 'button[data-testid="email-phone-submit"]',
-      passwordField: "input#login-widget-password:not(:disabled)",
+      passwordField: 'input[name="password"][type="password"]',
       nextBtnFromPassword: "#button-submit:not(:disabled)",
       authenticatorMethodItem: "section[data-unify]",
-      otpField: 'input[aria-label="otp input"]:not(:disabled)',
+      otpField: '#TT4B_TSV_Verify_Code_Input',
+      verifyOtp: "#TT4B_TSV_Verify_Submit_Btn",
       authenticated: '[data-testid="divHomeHomeWrapper"]',
-      loginWithEmail: "#TikTok_Ads_SSO_Login_Email_Panel_Button"
+      loginWithEmail: "#TikTok_Ads_SSO_Login_Email_Panel_Button:not(:disabled)"
     };
     // controller.signal.addEventListener("abort", () => {
     //   throw new Error(controller.signal.reason);
@@ -874,16 +876,10 @@ export default class Account {
       timeout: 0,
       visible: true,
     });
-    await new Promise((r) => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 300));
     await emailField.click({ clickCount: 3 });
     console.log("Email email element clicked");
     await emailField.type(account.email);
-    // const nextBtnFromEmail = await page.waitForSelector(els.nextBtnFromEmail, {
-    //   timeout: 0,
-    //   visible: true,
-    // });
-    // await nextBtnFromEmail.click();
-    await emailField.press("Enter");
     if (controller.signal.aborted) {
       return;
     }
@@ -904,22 +900,6 @@ export default class Account {
         return;
       }
       if (account.useAuthenticator) {
-        await page.waitForSelector(els.authenticatorMethodItem, {
-          timeout: 0,
-          visible: true,
-          hidden: false,
-        });
-        const methods = await page.$$(els.authenticatorMethodItem);
-        for (const method of methods) {
-          const i = methods.indexOf(method) + 1;
-          const text = await method.evaluate((x) => x.textContent);
-          if (text.toLowerCase().includes("google authenticator")) {
-            try {
-              await method.evaluate((x: any) => x.click());
-            } catch (err) { }
-          }
-        }
-        console.log("Waiting for otp field is being presented");
         const otpField = await page.waitForSelector(els.otpField, {
           timeout: 0,
           visible: true,
@@ -927,6 +907,11 @@ export default class Account {
         await otpField.type(
           this.generateOtpCodeFromSecret(account.secretAutenticator)
         );
+        const verifyOtp = await page.waitForSelector(els.verifyOtp, {
+          timeout: 0,
+          visible: true,
+        })
+        await verifyOtp.click()
       } else {
         this.notification.show({
           title: account.name,
@@ -949,53 +934,31 @@ export default class Account {
         buttonOnClick: undefined,
       });
     }
-    // Wait until
+
+    // Wait until authenticated
     while (true) {
       if (controller.signal.aborted) {
         return;
       }
       const url: string = await page.url();
-      if (url.split("?")[0] === "https://mitra.tokopedia.com/") {
+      if (url.split("?")[0] === "https://seller-id.tokopedia.com/homepage") {
+        // It's already authenticated, then, i need to get the auth params from the cookies
+        await page.setRequestInterception(true)
+        this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/product/manage', 2)
+        const authParams = await this.listenAuthParams(page)
+        const cookies = await page.cookies()
+        const rawCookies = this.parseCookiesToRaw(cookies)
+        const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
+        await this.setCookies(id, cookies)
+        await this.setShopId(sellerId, id)
+        await this.setAuthenticated(id, true)
+        await this.setAuthParams(id, authParams)
         break;
       }
-      await new Promise((r) => setTimeout(r, 200));
+      await new Promise((r) => setTimeout(r, 500));
     }
     // await this.browser.navigatePage(page, "https://tokopedia.com/user");
     // await new Promise((r) => setTimeout(r, 1000));
-    if (controller.signal.aborted) {
-      return;
-    }
-    const cookies = await page.cookies();
-    if (controller.signal.aborted) {
-      return;
-    }
-
-    let shopid;
-    if (controller.signal.aborted) {
-      return;
-    }
-    while (true) {
-      if (controller.signal.aborted) {
-        return;
-      }
-      console.log("getting the shopid");
-      shopid = await this.getShopId(cookies);
-      console.log("shopid taked: ", shopid);
-      if (shopid != "") {
-        await this.setShopId(shopid, account.id);
-        break;
-      } else {
-        console.log("failed for get the shopid");
-        await new Promise((r) => setTimeout(r, 900));
-      }
-      await new Promise((r) => setTimeout(r, 300));
-    }
-    if (controller.signal.aborted) {
-      return;
-    }
-    await this.setCookies(id, cookies);
-    await this.setAuthenticated(id, true);
-    await this.setShopId(shopid, id);
     if (controller.signal.aborted) {
       return;
     }
@@ -1008,6 +971,71 @@ export default class Account {
       message: "Login berhasil",
       buttonOnClick: undefined,
     });
+  }
+
+  private async setAuthParams(id: number, params: AccountAuth): Promise<void> {
+    await this.db.query(`
+        UPDATE account SET 
+          auth_fp = '${params.fp}',
+          auth_oec_seller_id = '${params.oecSellerId}',
+          auth_aid = '${params.aid}',
+          auth_msToken = '${params.msToken}',
+          auth_XBogus = '${params.XBogus}',
+          auth_signature = '${params.signature}'
+        WHERE id = '${id}'
+      `)
+  }
+
+  /**
+   * Retrieves the seller ID by making a GET request to the specified URL with the provided parameters and cookies.
+   *
+   * @param params - An object containing authentication details required for the request.
+   * @param params.fp - A fingerprint string used for identifying the request.
+   * @param params.msToken - A token used for authentication.
+   * @param params.XBogus - A security parameter used in the request.
+   * @param params.signature - A signature string for request validation.
+   * @param context - An object containing additional request context.
+   * @param context.cookies - A string representing the cookies to be sent with the request.
+   * @returns A promise that resolves to the seller's username as a string.
+   * @throws An error if the HTTP request fails or the response status is not OK.
+   */
+  private async getSellerID2(params: AccountAuth, { cookies }: {
+    cookies: string
+  }): Promise<string> {
+    const url = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&oec_seller_id=7495819708637087982&aid=4068&app_name=i18n_ecom_shop&fp=${params.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${params.msToken}&X-Bogus=${params.XBogus}&_signature=${params.signature}`
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        cookie: cookies
+      }
+    })
+    if(!response.ok) { throw new Error("Failed for get the seller id: http errno code " + response.status) }
+    const data: any = await response.json()
+    return data.data.account.user_name
+  }
+
+  private listenAuthParams(page: Page): Promise<AccountAuth> {
+    return new Promise((resolve, reject) => {
+      console.log("Waiting until params detected!")
+      const listenRequest = async (req: HTTPRequest) => {
+        const url = req.url()
+        req.continue()
+        if(url.includes('seller/message/pull_by_category_v2')) {
+          const params: any = queryString.parse(url.split('?')[1])
+          page.off('request', listenRequest)
+          await page.setRequestInterception(false)
+          resolve({
+            fp: params.fp,
+            oecSellerId: params.oec_seller_id,
+            aid: params.aid,
+            msToken: params.msToken,
+            XBogus: params['X-Bogus'],
+            signature: params._signature
+          })
+        }
+      }
+      page.on('request', listenRequest)
+    })
   }
 
   /**
@@ -1071,7 +1099,7 @@ export default class Account {
 
   async setShopId(shopid: string, id: number): Promise<void> {
     const sql = `
-            UPDATE account SET shopid = ${shopid} WHERE id = "${id}"
+            UPDATE account SET shopid = "${shopid}" WHERE id = "${id}"
         `;
     await this.db.query(sql);
     const i: number = this.monitoring.mainData.findIndex((x) => x.id == id);

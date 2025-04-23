@@ -191,7 +191,7 @@
     "puppeteer-extra-plugin-adblocker": "^2.13.6",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "puppeteer-extra-plugin-user-preferences": "^2.4.1",
-    "query-string": "^8.1.0",
+    "query-string": "^9.1.1",
     "queue": "^7.0.0",
     "random-port": "^0.1.0",
     "regedit": "^5.1.3",

@@ -216,7 +216,7 @@ export default class Browser {
     while (maxRetry === 0 || retry < maxRetry) {
       if(page.isClosed()) { throw new Error('Page is closed') }
       try {
-        await page.goto(url);
+        await page.goto(url, { waitUntil: 'networkidle2' });
         return
       } catch (err) {
         if(maxRetry !== 0) {
