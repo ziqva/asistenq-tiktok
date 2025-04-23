@@ -17,7 +17,7 @@ export default class LogoutChecker {
         this.account = account
         this.monitoring = monitoring
 
-        this.checkRuntime()
+        // this.checkRuntime()
     }   
 
     /**
