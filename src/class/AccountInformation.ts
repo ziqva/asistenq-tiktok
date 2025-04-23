@@ -29,7 +29,6 @@ export default class AccountInformation {
     account: Account;
     processedInvoiceMemory: Memory
   }) {
-    this.hitApi = "https://gql.tokopedia.com/graphql/isAuthenticatedQuery";
     this.tz = "Asia/Jakarta";
     this.notification = notification;
     this.account = account;
@@ -131,28 +130,11 @@ export default class AccountInformation {
       }
       const headers = {
         cookie: rawCookies,
-        "content-type": "application/json",
-        referer: "https://seller.tokopedia.com/chat",
-        origin: "https://seller.tokopedia.com",
-        "sec-fetch-dest": "empty",
-        "sec-fetch-mode": "cors",
-        "sec-fetch-site": "same-site",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
-        "x-source": "tokopedia-lite",
-        "x-tkpd-lite-service": "icarus",
-        "x-version": "bf3d806",
-        accept: "application/json",
+        accept: '*/*',
+        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
       };
-      const response: Response = await fetch(this.hitApi, {
-        headers: headers,
-        method: "POST",
-        body: JSON.stringify(payloads),
-        timeout: 15000,
-      });
-      const contentType: string = response.headers.get("content-type");
-      if (contentType === "application/json") {
-        const data: any = await response.json();
+      
+     
         // let setted = false;
         // for (const item of data) {
         //   if (setted) break;
@@ -172,17 +154,16 @@ export default class AccountInformation {
         //   }
         // }
 
-        account = this.setupProfileDetail(account, data);
-        account = this.setupBalance(account, data);
-        account = this.setupChat(account, data);
-        account = this.setupAllOrders(account, data);
+        account = await this.setupProfileDetail(account, headers);
+        // account = this.setupBalance(account);
+        // account = this.setupChat(account);
+        // account = this.setupAllOrders(account);
         account.lastUpdated = moment().tz(this.tz).unix();
         if (autoUpdate && database) {
           this.updateData(account, database);
         }
-      }
       return account;
-    } catch (err) {
+    } catch (err: any) {
       console.error(err);
       return account;
     }
@@ -489,17 +470,14 @@ export default class AccountInformation {
     return account;
   }
 
-  setupProfileDetail(account: StructAccount, data: any): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.userShopInfo) {
-        try {
-          const avatar = item.data.userShopInfo.info.shop_avatar;
-          if (typeof avatar === "string") {
-            account.avatar = avatar;
-          }
-        } catch (er) {}
-      }
-    }
+  private async setupProfileDetail(account: StructAccount, headers: any): Promise<StructAccount> {
+    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
+    const response = await fetch(url, {
+      headers
+    })
+    if(!response.ok) { return account }
+    const data: any = await response.json()
+    console.log({data})
     return account;
   }
 
