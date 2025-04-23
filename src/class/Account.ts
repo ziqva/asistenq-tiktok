@@ -527,7 +527,13 @@ export default class Account {
                 null,
                 null,
                 0,
-                0
+                0,
+                '',
+                '',
+                '',
+                '',
+                '',
+                ''
             )
         `;
     await this.db.query(sql);
@@ -949,6 +955,7 @@ export default class Account {
         const cookies = await page.cookies()
         const rawCookies = this.parseCookiesToRaw(cookies)
         const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
+        console.log({sellerId})
         await this.setCookies(id, cookies)
         await this.setShopId(sellerId, id)
         await this.setAuthenticated(id, true)
@@ -1002,7 +1009,7 @@ export default class Account {
   private async getSellerID2(params: AccountAuth, { cookies }: {
     cookies: string
   }): Promise<string> {
-    const url = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&oec_seller_id=7495819708637087982&aid=4068&app_name=i18n_ecom_shop&fp=${params.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${params.msToken}&X-Bogus=${params.XBogus}&_signature=${params.signature}`
+    const url = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&oec_seller_id=${params.oecSellerId}&aid=${params.aid}&app_name=i18n_ecom_shop&fp=${params.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${params.msToken}&X-Bogus=${params.XBogus}&_signature=${params.signature}`
     const response = await fetch(url, {
       method: "GET",
       headers: {
