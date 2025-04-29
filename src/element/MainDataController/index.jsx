@@ -150,7 +150,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller.tokopedia.com/myshop_order?auto=1&status=new_order"
+              "https://seller-id.tokopedia.com/order?order_status[]=1&selected_sort=1&tab=to_ship"
             )
           }
         />
