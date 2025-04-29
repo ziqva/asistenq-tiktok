@@ -218,6 +218,21 @@ export default class AccountInformation {
       orderDeadline.push(parseInt(order.trade_order_module.latest_tts_time))
     }
     const orderCount = orders.length
+    if(orderCount > account.orderCount) {
+      const diff = orderCount - account.orderCount
+      const title =
+        `${account.name}` +
+        (this.account.getFirstGroupName(account.id)
+          ? ` - ${this.account.getFirstGroupName(account.id)}`
+          : "");
+      this.notification.show({
+        title,
+        message: `${diff} Pesanan baru`,
+      });
+      account.orderCount = orderCount
+      account.orderPotency = orderPotency
+      account.orderEpoch = orderCount === 0 ? 0 : Math.min(...orderDeadline)
+    }
     return account
   }
 
