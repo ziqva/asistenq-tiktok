@@ -148,6 +148,7 @@ export default class AccountInformation {
       // account = this.setupBalance(account);
       account = await this.setupChat(account, headers);
       account = await this.setupNewOrder(account, headers);
+      account = await this.setupShippingOrder(account, headers);
       account.lastUpdated = moment().tz(this.tz).unix();
       if (autoUpdate && database) {
         this.updateData(account, database);
@@ -182,6 +183,10 @@ export default class AccountInformation {
             WHERE id = "${account.id}"
         `;
     await database.query(sql);
+  }
+
+  private async setupShippingOrder(account: StructAccount, headers: any): Promise<StructAccount> {
+    return account
   }
 
   /**
