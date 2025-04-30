@@ -122,31 +122,31 @@ export default function Action({ data, onEdit }) {
         <MenuItem
           onClick={handlePin}
         >{data.pinned === 0 ? 'Pin' : 'Un-Pin'}</MenuItem>
-        <Divider
+        {/* <Divider
           style={{
             background: "#000",
             marginTop: 0,
             marginBottom: 0,
           }}
-        />
+        /> */}
         {/* End of hapus */}
         {/* Hapus produk */}
-        <MenuItem
+        {/* <MenuItem
           onClick={() =>
             window.open(`/free-feature/delete-product/${data.id}`, "_blank")
           }
         >
           Delete Product
-        </MenuItem>
+        </MenuItem> */}
         {/* End of hapus produk */}
         {/* Product uploader */}
-        <MenuItem
+        {/* <MenuItem
           onClick={() =>
             window.open(`/free-feature/product-uploader/${data.id}`, "_blank")
           }
         >
           Upload Product
-        </MenuItem>
+        </MenuItem> */}
         {/* End of product uploader */}
       </Menu>
     </div>
