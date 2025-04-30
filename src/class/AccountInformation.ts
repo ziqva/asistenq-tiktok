@@ -202,6 +202,8 @@ export default class AccountInformation {
             SET
                 ${Object.entries(account)
                   .filter((x) => x[0].toLowerCase().trim() !== "cookies" && x[0].toLowerCase().trim() !== "shopid")
+                  .filter(x => x[0] !== 'auth')
+                  .filter(x => x[0] !== undefined && x[0] !== 'badgeImage')
                   .map((x) => {
                     return `${x[0]} = ${this.formatWithtype(x[1])}`;
                   })
@@ -351,7 +353,6 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    console.log({data})
     if(data.data.total_count === 0) {
       account.dikemasCount = 0
       account.dikemasPotency = 0
