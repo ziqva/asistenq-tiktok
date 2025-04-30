@@ -196,6 +196,20 @@ export default class AccountInformation {
     await database.query(sql);
   }
 
+  /**
+   * Fetches the list of shipped orders from Tokopedia for a given account
+   * and updates the account's shipping statistics.
+   *
+   * This method performs a POST request to Tokopedia's fulfillment API
+   * to retrieve orders with the "shipped" status. It calculates the total
+   * order value (potency) and compares the current order count with the
+   * previous value. If there are new shipped orders, it triggers a
+   * notification.
+   *
+   * @param account - The account object containing authentication and tracking info.
+   * @param headers - HTTP headers including authorization tokens and other metadata.
+   * @returns A Promise resolving to the updated account object with new shipped count and potency.
+   */
   private async setupShippingOrder(account: StructAccount, headers: any): Promise<StructAccount> {
     const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
     const payload = {"sort_info":"6","search_condition":{"condition_list":{"search_tab":{"value":["102"]}}},"count":50,"pagination_type":0,"offset":0,"extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
