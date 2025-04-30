@@ -227,7 +227,7 @@ export default function MainDataController({
     {
       title: "Complaint",
       align: "center",
-      width: 90,
+      width: 100,
       render: (data) => (
         <ComplaintCell
           data={data}
@@ -272,91 +272,6 @@ export default function MainDataController({
         const bat = b.pinnedAt | 0
         if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         return a.balance - b.balance;
-      },
-    },
-    {
-      title: "Bank",
-      align: "center",
-      width: 100,
-      render: (data) => (
-        <BankCell
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(
-              id,
-              "https://www.tokopedia.com/user/settings/bank"
-            )
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        const aat = a.pinnedAt | 0
-        const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        return a.bankAN.length - b.bankAN.length
-      },
-    },
-    {
-      title: "Skor",
-      align: "center",
-      width: 60,
-      render: (data) => (
-        <SkorCell
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(id, "https://seller.tokopedia.com/shop-score-page")
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        const aat = a.pinnedAt | 0
-        const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        return a.score - b.score
-      },
-    },
-    {
-      title: "Ongkir",
-      align: "center",
-      width: 70,
-      render: (data) => (
-        <Ongkir
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(
-              id,
-              "https://seller.tokopedia.com/bebas-ongkir"
-            )
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        try {
-          const aat = a.pinnedAt | 0
-          const bat = b.pinnedAt | 0
-          if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-          return (a.freeOngkir ? 1 : 0 - b.freeOngkir ? 1 : 0)
-        } catch(err) { return 1 }
-      },
-    },
-    {
-      title: "Status",
-      align: "center",
-      width: 70,
-      render: (data) => (
-        <StatusCell
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(id, "https://seller.tokopedia.com")
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        const aat = a.pinnedAt | 0
-        const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        // return (a.moderated ? 1 : 0 - b.moderated ? 1 : 0)
-        return a.statusSort - b.statusSort
       },
     },
     {
