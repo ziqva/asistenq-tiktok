@@ -383,7 +383,7 @@ export default class Device {
       });
       this.recorder.email = data.tobelsoft.data.user.email;
       this.recorder.start()
-      this.recorder.syncMonitoring(this.monitoring.mainData)
+      // this.recorder.syncMonitoring(this.monitoring.mainData)
     }
     
     this.registered = data.tobelsoft.data.registered;
