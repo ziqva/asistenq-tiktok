@@ -109,11 +109,6 @@ export default class MainDataColumn {
                 active: true
             },
             {
-                name: "Discus",
-                index: 3,
-                active: true,
-            },
-            {
                 name: "New Order",
                 index: 4,
                 active: true
@@ -137,31 +132,6 @@ export default class MainDataColumn {
                 name: "Saldo",
                 index: 8,
                 active: true,
-            },
-            {
-                name: "Bank",
-                index: 9,
-                active: true,
-            },
-            {
-                name: "Skor",
-                index: 10,
-                active: true,
-            },
-            {
-                name: "Ongkir",
-                index: 11,
-                active: true,
-            },
-            {
-                name: "Status",
-                index: 12,
-                active: true
-            },
-            {
-                name: "PM",
-                index: 13,
-                active: true
             },
             {
                 name: "Product",
