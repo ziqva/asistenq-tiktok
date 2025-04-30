@@ -100,6 +100,16 @@ export default class AccountInformation {
       return null
     }
   }
+  
+  private async setupBalance(account: StructAccount, headers: any): Promise<StructAccount> {
+    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
+    const response = await fetch(url, {
+      headers,
+      method: "GET"
+    })
+    const data: any = await response.json()
+    return account
+  }
 
   /**
    * Retrieves the account details from the API.
@@ -149,6 +159,7 @@ export default class AccountInformation {
       account = await this.setupChat(account, headers);
       account = await this.setupNewOrder(account, headers);
       account = await this.setupShippingOrder(account, headers);
+      account = await this.setupBalance(account, headers);
       account.lastUpdated = moment().tz(this.tz).unix();
       if (autoUpdate && database) {
         this.updateData(account, database);
@@ -245,6 +256,12 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
+    if(data.data.total_count === 0) {
+      account.orderCount = 0
+      account.orderPotency = 0
+      account.orderEpoch = 0
+      return account
+    }
     const orders: any = data.data.main_orders
     let orderPotency: number = 0
     let orderDeadline: number[] = []
@@ -515,14 +532,14 @@ export default class AccountInformation {
     return account;
   }
 
-  setupBalance(account: StructAccount, data: any): StructAccount {
-    for (const item of data) {
-      if (!item.errors && item.data.balance) {
-        account.balance = item.data.balance.seller_all;
-      }
-    }
-    return account;
-  }
+  // setupBalance(account: StructAccount, data: any): StructAccount {
+  //   for (const item of data) {
+  //     if (!item.errors && item.data.balance) {
+  //       account.balance = item.data.balance.seller_all;
+  //     }
+  //   }
+  //   return account;
+  // }
 
   private async setupProfileDetail(account: StructAccount, headers: any): Promise<StructAccount> {
     const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
