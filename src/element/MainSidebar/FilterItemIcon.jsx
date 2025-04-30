@@ -5,6 +5,7 @@ import DikemasIcon from "static/icon/processing-animated.gif";
 import DikirimIcon from "static/icon/shipping-animated.gif";
 import ComplaintIcon from "static/icon/complaint.png";
 import Badge from "@mui/material/Badge";
+import { Opacity } from "@mui/icons-material";
 
 export default function FilterItemIcon({
   active,
@@ -23,13 +24,14 @@ export default function FilterItemIcon({
           onClick={() => onActiveChange("chat")}
           count={data.chatCount || 0}
         />
-        <Button
+        
+        {/* <Button
           icon={DiscusiIcon}
           text="Diskusi"
           active={active === "discus"}
           onClick={() => onActiveChange("discus")}
           count={data.discusCount || 0}
-        />
+        /> */}
         <Button
           icon={OrderIcon}
           text="Order"
@@ -37,8 +39,6 @@ export default function FilterItemIcon({
           onClick={() => onActiveChange("order")}
           count={data.orderCount || 0}
         />
-      </div>
-      <div className="row" data-aos="fade-up" data-aos-delay={600}>
         <Button
           icon={DikemasIcon}
           text="Dikemas"
@@ -46,12 +46,33 @@ export default function FilterItemIcon({
           onClick={() => onActiveChange("packing")}
           count={data.dikemasCount || 0}
         />
+      </div>
+      <div className="row" data-aos="fade-up" data-aos-delay={600}>
+        {/* <Button
+          icon={DikemasIcon}
+          text="Dikemas"
+          active={active === "packing"}
+          onClick={() => onActiveChange("packing")}
+          count={data.dikemasCount || 0}
+        /> */}
         <Button
           icon={DikirimIcon}
           text="Dikirim"
           active={active === "shipping"}
           onClick={() => onActiveChange("shipping")}
           count={data.dikirimCount || 0}
+        />
+        <Button
+          icon={DikemasIcon}
+          text="Dikemas"
+          active={active === "packing"}
+          onClick={() => onActiveChange("packing")}
+          count={data.dikemasCount || 0}
+          style={{
+            opacity: 0,
+            cursor: 'default'
+          }}
+          disabled={true}
         />
         <Button
           icon={ComplaintIcon}

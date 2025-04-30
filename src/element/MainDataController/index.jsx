@@ -114,32 +114,32 @@ export default function MainDataController({
         }
       },
     },
-    {
-      title: "Discus",
-      align: "center",
-      width: 70,
-      render: (data) => (
-        <DiscusCell
-          data={data}
-          onClick={(id) =>
-            openBrowser.openBrowser(
-              id,
-              "https://seller.tokopedia.com/inbox-talk"
-            )
-          }
-        />
-      ),
-      sorter: (a, b) => {
-        const aat = a.pinnedAt | 0
-        const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        if (sortType === "jumlah") {
-          return a.discusCount - b.discusCount;
-        } else {
-          return 0;
-        }
-      },
-    },
+    // {
+    //   title: "Discus",
+    //   align: "center",
+    //   width: 70,
+    //   render: (data) => (
+    //     <DiscusCell
+    //       data={data}
+    //       onClick={(id) =>
+    //         openBrowser.openBrowser(
+    //           id,
+    //           "https://seller.tokopedia.com/inbox-talk"
+    //         )
+    //       }
+    //     />
+    //   ),
+    //   sorter: (a, b) => {
+    //     const aat = a.pinnedAt | 0
+    //     const bat = b.pinnedAt | 0
+    //     if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+    //     if (sortType === "jumlah") {
+    //       return a.discusCount - b.discusCount;
+    //     } else {
+    //       return 0;
+    //     }
+    //   },
+    // },
     {
       title: "New Order",
       align: "center",
