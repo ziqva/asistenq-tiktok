@@ -208,6 +208,11 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data: any = await response.json()
+    if(data.data.total_count === 0) {
+      account.dikirimCount = 0
+      account.dikirimPotency = 0
+      return account
+    }
     const orders: any = data.data.main_orders
     let orderPotency: number = 0
     for(const order of orders) {
