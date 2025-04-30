@@ -91,7 +91,7 @@ export default class Server {
     publicMonitoring: PublicMonitoring
   ) {
     this.publicMonitoring = publicMonitoring
-    this.port = 9183;
+    this.port = 9184;
     this.holiday = holiday;
     this.liveChat = liveChat;
     this.productUploader = productUploader;

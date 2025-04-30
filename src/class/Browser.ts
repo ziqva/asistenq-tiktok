@@ -131,7 +131,7 @@ export default class Browser {
       icon: manifest.icons ? this.getLargestIconPath(manifest.icons, extractedDir) : 'No icon available',
       dir: extractedDir,
       id: this.getLastDirectoryName(extractedDir),
-      iconUrl: `http://localhost:9183/browser/ext_icon?id=${this.getLastDirectoryName(extractedDir)}`
+      iconUrl: `http://localhost:9184/browser/ext_icon?id=${this.getLastDirectoryName(extractedDir)}`
     };
 
     return extensionDetails;

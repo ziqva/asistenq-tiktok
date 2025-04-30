@@ -703,7 +703,7 @@ export default class Account {
       message: `Berhasil ${stats.success} akun ditambahkan, ${stats.failed} akun gagal ditambahkan`,
       buttonOnClick: undefined,
     });
-    const viewErrorsUrl = 'http://localhost:9183/api/import-error-list?e=' + moment().tz("Asia/Jakarta").unix()
+    const viewErrorsUrl = 'http://localhost:9184/api/import-error-list?e=' + moment().tz("Asia/Jakarta").unix()
     shell.openExternal(viewErrorsUrl)
   }
 
