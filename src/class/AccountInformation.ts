@@ -101,13 +101,26 @@ export default class AccountInformation {
     }
   }
   
+  /**
+   * Retrieves the current account balance from Tokopedia and updates the account object.
+   *
+   * This method sends a GET request to Tokopedia's settlement balance API using
+   * the provided authentication headers. It parses the returned balance value
+   * and assigns it to the account's `balance` property.
+   *
+   * @param account - The account object containing authentication and balance info.
+   * @param headers - HTTP headers used for authentication and device/browser metadata.
+   * @returns A Promise resolving to the updated account object with the current balance.
+   */
   private async setupBalance(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
+    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
     const response = await fetch(url, {
       headers,
       method: "GET"
     })
     const data: any = await response.json()
+    const balance = parseInt(data.data.amount.amount)
+    account.balance = balance
     return account
   }
 
