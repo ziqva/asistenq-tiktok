@@ -59,7 +59,7 @@ const ImportDialog = ({ open, onClose }) => {
                 disabled={loading}
                 onClick={() => {
                   window.location.href =
-                    "https://ziqva.com/ziqva-labs-lite-account-template.xlsx";
+                    "http://ziqva-resource.streampeg.com/asistenq-tiktok-import-template.xlsx";
                 }}
               >
                 template.xlsx
