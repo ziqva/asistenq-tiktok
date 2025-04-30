@@ -205,7 +205,7 @@ function createWindow() {
     icon: iconPath,
     autoHideMenuBar: true,
   });
-  const title: string = `AsistenQ - ${app.getVersion()}`;
+  const title: string = `AsistenQ Tiktok - ${app.getVersion()}`;
   mainWindow.setTitle(title);
   zoomLevel.browserWindow = mainWindow;
   mainWindow.on("page-title-updated", (sender) => sender.preventDefault());
