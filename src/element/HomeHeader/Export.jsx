@@ -13,11 +13,6 @@ export default function Export({ selectedAccounts, useSelection, ...args }) {
         disabled: loading,
       },
       {
-        label: "Semua (Dengan tanggal moderasi)",
-        key: "all_with_moderation_date",
-        disabled: loading
-      },
-      {
         label: "Sudah Login",
         key: "authenticated",
         disabled: loading,
@@ -25,11 +20,6 @@ export default function Export({ selectedAccounts, useSelection, ...args }) {
       {
         label: "Belum Login",
         key: "unauthenticated",
-        disabled: loading,
-      },
-      {
-        label: "Moderasi",
-        key: "moderated",
         disabled: loading,
       },
       {
