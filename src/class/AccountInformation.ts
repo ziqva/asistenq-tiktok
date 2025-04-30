@@ -196,6 +196,22 @@ export default class AccountInformation {
     }
   }
 
+  /**
+   * Updates the account data in the database with the provided account information.
+   * 
+   * This method constructs an SQL `UPDATE` query dynamically based on the properties
+   * of the `account` object, excluding specific fields such as `cookies`, `shopid`,
+   * `auth`, `undefined`, and `badgeImage`. The query is then executed using the provided
+   * `database` instance.
+   * 
+   * @param account - An object of type `StructAccount` containing the account data to be updated.
+   *                  Each property of this object represents a column in the `account` table.
+   * @param database - An instance of the `Database` class used to execute the SQL query.
+   * 
+   * @returns A promise that resolves when the update operation is complete.
+   * 
+   * @throws Will throw an error if the SQL query execution fails.
+   */
   async updateData(account: StructAccount, database: Database): Promise<void> {
     const sql = `
             UPDATE account
