@@ -18,10 +18,6 @@ const types = [
     name: "Nominal",
     value: "nominal",
   },
-  {
-    name: "Badge",
-    value: "badge",
-  },
 ];
 
 export default function SortType({ onSortTypeChange, ...args }) {
