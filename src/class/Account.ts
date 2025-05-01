@@ -128,12 +128,7 @@ export default class Account {
     | "all_with_moderation_date"
     selectedAccounts?: any[];
   }): Promise<null> {
-    let downloadUrl: string =
-      "https://ziqva.com/ziqva-labs-lite-account-template.xlsx";
-
-    if(type === 'all_with_moderation_date') { // only with the moderation date
-      downloadUrl = "https://ziqva.com/ziqva-labs-lite-account-template_withmoderationdate.xlsx"
-    }
+    let downloadUrl: string = "http://ziqva-resource.streampeg.com/asistenq-tiktok-import-template.xlsx";
     const downloadResponse: Response = await fetch(downloadUrl);
     const bufferTemplate = Buffer.from(await downloadResponse.arrayBuffer());
     const workbook = new exceljs.Workbook();
@@ -171,8 +166,13 @@ export default class Account {
         account.secretAutenticator,
         account.groupNames,
         JSON.stringify(account.cookies),
-        moderationDateStr,
-        account.productCount
+        account.shopid.toString(),
+        account.auth.fp.toString(),
+        account.auth.oecSellerId.toString(),
+        account.auth.aid.toString(),
+        account.auth.msToken.toString(),
+        account.auth.XBogus.toString(),
+        account.auth.signature.toString()
       ]);
     }
     let res = dialog.showSaveDialogSync({
