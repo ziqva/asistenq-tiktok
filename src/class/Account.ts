@@ -435,6 +435,8 @@ export default class Account {
     labels,
     authenticated,
     cookies,
+    auth,
+    shopid
   }: {
     name: string;
     email: string;
@@ -444,6 +446,8 @@ export default class Account {
     labels: string;
     authenticated: boolean;
     cookies: any[];
+    auth?: AccountAuth,
+    shopid?: string
   }): Promise<void> {
     const targetId: number = await this.generateId();
     const nameFormatted: string = name.trim().split('"').join("");
@@ -475,28 +479,19 @@ export default class Account {
     } else if (emailFormatted.length < 1) {
       throw new Error("Email harus diisi");
     }
-    let shopid = '';
     const exists: boolean = await this.exists(emailFormatted);
     if (exists) {
       throw new Error("Akun sudah ditambahkan sebelumnya");
     }
 
-    if (cookies.length > 0) {
-      while (true) {
-        try {
-          shopid = await this.getShopId(cookies);
-          if (shopid == '') {
-            await new Promise((r) => setTimeout(r, 500));
-            continue;
-          } else {
-            break;
-          }
-        } catch (err) {
-          await new Promise((r) => setTimeout(r, 500));
-        }
-      }
+    const _auth: AccountAuth = auth || {
+      fp: '',
+      oecSellerId: '',
+      aid: '',
+      XBogus: '',
+      msToken: '',
+      signature: ''
     }
-
     const currentEpoch: number = new Date().valueOf();
     const sql = `
             INSERT INTO account VALUES(
@@ -521,22 +516,30 @@ export default class Account {
                  0, 
                 "${labelsFormatted}",
                 0,
-                '',
+                '${shopid ? shopid : ''}',
                 0,  
                 0,
                 null,
                 null,
                 0,
                 0,
-                '',
-                '',
-                '',
-                '',
-                '',
-                ''
+                '${_auth.fp}',
+                '-${_auth.oecSellerId}-',
+                '${_auth.aid}',
+                '${_auth.msToken}',
+                '${_auth.XBogus}',
+                '${_auth.signature}'
             )
         `;
     await this.db.query(sql);
+    try {
+      await this.setCookies(targetId, cookies)
+      if(cookies.length > 0) {
+        await this.setAuthenticated(targetId, true)
+      }
+    } catch(err) {
+      console.error('failed to set cookies: ', err.message)
+    }
     const account: StructAccount = {
       name: nameFormatted,
       email: emailFormatted,
@@ -572,14 +575,7 @@ export default class Account {
       statusMessage: null,
       pmSort: 0,
       statusSort: 0,
-      auth: {
-        fp: null,
-        oecSellerId: null,
-        aid: null,
-        msToken: null,
-        XBogus: null,
-        signature: null
-      }
+      auth: _auth
     };
 
     this.monitoring.mainData.push(account);
@@ -625,6 +621,13 @@ export default class Account {
         row.getCell(5).value ? row.getCell(5).value : row.getCell(5).text,
         row.getCell(6).value ? row.getCell(6).value : row.getCell(6).text,
         row.getCell(7).value ? row.getCell(7).value : row.getCell(7).text,
+        row.getCell(8).value ? row.getCell(8).value : row.getCell(8).text,
+        row.getCell(9).value ? row.getCell(9).value : row.getCell(9).text,
+        row.getCell(10).value ? row.getCell(10).value : row.getCell(10).text,
+        row.getCell(11).value ? row.getCell(11).value : row.getCell(11).text,
+        row.getCell(12).value ? row.getCell(12).value : row.getCell(12).text,
+        row.getCell(13).value ? row.getCell(13).value : row.getCell(13).text,
+        row.getCell(14).value ? row.getCell(14).value : row.getCell(14).text,
       ];
       const error: string = values[0].toString().trim();
       const name: string = values[1]
@@ -680,6 +683,15 @@ export default class Account {
           cookies: cookies,
           useAuthenticator: authenticator.length > 0,
           authenticated: cookies.length >= 1,
+          shopid: values[7] ? values[7].toString() : '',
+          auth: {
+            fp: values[8] ? values[8].toString() : '',
+            oecSellerId: values[9] ? values[9].toString() : '',
+            aid: values[10] ? values[10].toString() : '',
+            msToken: values[11] ? values[11].toString() : '',
+            XBogus: values[12] ? values[12].toString() : '',
+            signature: values[13] ? values[13].toString() : ''
+          }
         });
         stats.success++;
       } catch (err) {
