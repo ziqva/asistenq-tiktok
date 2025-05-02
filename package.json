@@ -19,7 +19,7 @@
   },
   "build": {
     "appId": "com.ziqvalabs.asistenq-tiktok",
-    "productName": "AsistenQ",
+    "productName": "AsistenQ Tiktok",
     "copyright": "Copyright © 2023 Ziqva Labs",
     "compression": "maximum",
     "directories": {
