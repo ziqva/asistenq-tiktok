@@ -33,26 +33,6 @@ export default function Product({ data, onClick }) {
                 <th className="name">Semua Product: </th>
                 <th className="value">{data.productCount}</th>
               </tr>
-              <tr className="item">
-                <th className="name">Limit Product: </th>
-                <th className="value">{data.productSpace}</th>
-              </tr>
-              <tr className="item">
-                <th className="name">Aktif: </th>
-                <th className="value">{data.activeProduct}</th>
-              </tr>
-              <tr className="item">
-                <th className="name">Nonaktif: </th>
-                <th className="value">{data.inactiveProduct}</th>
-              </tr>
-              <tr className="item">
-                <th className="name">Pelanggaran: </th>
-                <th className="value">{data.violationProduct}</th>
-              </tr>
-              <tr className="item">
-                <th className="name">Diarsipkan:</th>
-                <th className="value">{data.archivedProduct}</th>
-              </tr>
             </tbody>
           </table>
         }
@@ -61,7 +41,7 @@ export default function Product({ data, onClick }) {
           color: getColor(data.productCount, data.productSpace).color,
           background: getColor(data.productCount, data.productSpace).background
         }}>
-          {formatRupiah(data.productCount).replace("Rp", "").trim()} / {formatRupiah(data.productSpace).replace('Rp', '').trim()}
+          {formatRupiah(data.productCount).replace("Rp", "").trim()}
         </div>
       </Tooltip>
     </div>
