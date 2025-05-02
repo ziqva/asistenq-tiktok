@@ -24,15 +24,15 @@ export default class Device {
   private pingInterval: number;
   private recorder: Recorder
   private usedMachineid2: string[] = [
-    'ASISTENQ_3119470A-192B-425F-A87A-810BF2920ADC',
-    'ASISTENQ_EF71BFD7-0A04-41A9-9B7D-0C446E768B85',
-    'ASISTENQ_EADCE518-909D-4EBA-B475-EE39798D29CE',
-    'ASISTENQ_583D32C8-A730-46E3-9EF4-625DDA2BACA6',
-    'ASISTENQ_100AB0A1-0CD6-4617-A333-F02CFF2F5A40',
-    'ASISTENQ_8FD26B57-1504-52B6-B60D-83B6CB63DEDF',
-    'ASISTENQ_F02E9E09-4D9C-4933-8BF3-9DA2D79F7091',
-    'ASISTENQ_59FB6569-43E4-4E83-AC1F-143400E3DB80',
-    'ASISTENQ_CO2EC92C-EC03-489D-8C96-A362D4FB5BFA',
+    'ASISTENQ_TIKTOK_3119470A-192B-425F-A87A-810BF2920ADC',
+    'ASISTENQ_TIKTOK_EF71BFD7-0A04-41A9-9B7D-0C446E768B85',
+    'ASISTENQ_TIKTOK_EADCE518-909D-4EBA-B475-EE39798D29CE',
+    'ASISTENQ_TIKTOK_583D32C8-A730-46E3-9EF4-625DDA2BACA6',
+    'ASISTENQ_TIKTOK_100AB0A1-0CD6-4617-A333-F02CFF2F5A40',
+    'ASISTENQ_TIKTOK_8FD26B57-1504-52B6-B60D-83B6CB63DEDF',
+    'ASISTENQ_TIKTOK_F02E9E09-4D9C-4933-8BF3-9DA2D79F7091',
+    'ASISTENQ_TIKTOK_59FB6569-43E4-4E83-AC1F-143400E3DB80',
+    'ASISTENQ_TIKTOK_CO2EC92C-EC03-489D-8C96-A362D4FB5BFA',
     'CO2EC92C-EC03-489D-8C96-A362D4FB5BFA'
   ]
 
@@ -399,14 +399,14 @@ export default class Device {
    * @return {void}
    */
   initMachineId(): string {
-    const mid = "ASISTENQ_" + machineIdSync(true).toUpperCase()
+    const mid = "ASISTENQ_TIKTOK_" + machineIdSync(true).toUpperCase()
     console.log("mid default: ", mid)
     
     if(this.usedMachineid2.includes(mid)) {
-      this.machineId = "ASISTENQ_"+this.generateMachineId().toUpperCase()
+      this.machineId = "ASISTENQ_TIKTOK_"+this.generateMachineId().toUpperCase()
       console.log("mid has changed cause machine id is blocked: ", this.machineId)
     } else {
-      this.machineId = "ASISTENQ_" + machineIdSync(true).toUpperCase();
+      this.machineId = "ASISTENQ_TIKTOK_" + machineIdSync(true).toUpperCase();
       console.log("use default: ", this.machineId)
     }
     return this.machineId;
@@ -422,7 +422,7 @@ export default class Device {
     if(this.usedMachineid2.includes(this.machineId)) {
       const mid = this.generateMachineId().toUpperCase()
       console.log({mid2: mid})
-      this.machineId = "ASISTENQ_" + mid
+      this.machineId = "ASISTENQ_TIKTOK_" + mid
     }
     return this.machineId;
   }
