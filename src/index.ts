@@ -232,7 +232,7 @@ function createWindow() {
   // Updates
   autoUpdater.setFeedURL({
     provider: "generic",
-    url: "http://45.76.183.58/asistenq-update/",
+    url: "http://45.76.183.58/asistenq-tiktok-update/",
   });
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.on("update-downloaded", () => {
