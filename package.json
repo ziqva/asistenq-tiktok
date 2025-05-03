@@ -42,14 +42,7 @@
     "mac": {
       "category": "public.app-category.utilities",
       "icon": "./dist/images/icon.icns",
-      "publish": [
-        {
-          "provider": "github",
-          "owner": "fiko942",
-          "repo": "asistenq-updater",
-          "token": "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"
-        }
-      ]
+      "target": "dmg"
     },
     "nsis": {
       "oneClick": false,

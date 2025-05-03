@@ -233,8 +233,12 @@ function createWindow() {
   autoUpdater.setFeedURL({
     provider: "generic",
     url: "http://45.76.183.58/asistenq-tiktok-update/",
+    
   });
   autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-available', () => {
+    console.log({UpdateStatus: "Update avaiable, downloading..."})
+  })
   autoUpdater.on("update-downloaded", () => {
     // autoUpdater.quitAndInstall()
     const res = dialog.showMessageBoxSync(mainWindow, {
