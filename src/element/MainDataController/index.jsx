@@ -178,7 +178,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller.tokopedia.com/myshop_order?auto=1&status=confirm_shipping"
+              "https://seller-id.tokopedia.com/order?order_status[]=1&selected_sort=1&tab=to_ship"
             )
           }
         />
@@ -206,7 +206,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller.tokopedia.com/myshop_order?auto=1&status=in_shipping"
+              "https://seller-id.tokopedia.com/order?selected_sort=6&tab=shipped"
             )
           }
         />
@@ -234,7 +234,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller.tokopedia.com/myshop_order?auto=1&status=complaint"
+              "https://seller-id.tokopedia.com/order?selected_sort=1&tab=to_ship&urgency[]=10"
             )
           }
         />
@@ -262,7 +262,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://www.tokopedia.com/payment/deposit?nref=dside"
+              "https://seller-id.tokopedia.com/finance/withdraw-new"
             )
           }
         />
@@ -284,7 +284,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller.tokopedia.com/manage-product"
+              "https://seller-id.tokopedia.com/product/manage"
             )
           }
         />
