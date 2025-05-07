@@ -1,6 +1,6 @@
 {
   "name": "asistenq-tiktok",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A minimal application but lot of feature for monitor the Tiktok Shop accounts in one app and bundled with additional tool (ziqva.com)",
   "main": "./dist/index.js",
   "scripts": {
