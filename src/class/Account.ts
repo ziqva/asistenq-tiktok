@@ -959,7 +959,10 @@ export default class Account {
         return;
       }
       const url: string = await page.url();
-      if (url.split("?")[0] === "https://seller-id.tokopedia.com/homepage") {
+      if ([
+        "https://seller-id.tokopedia.com/homepage",
+        "https://seller-id.tokopedia.com/download-seller-app"
+      ].includes(url.split("?")[0])) {
         // It's already authenticated, then, i need to get the auth params from the cookies
         await page.setRequestInterception(true)
         this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/product/manage', 2)
