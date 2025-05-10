@@ -678,10 +678,10 @@ export default class Account {
           name: name,
           email: email,
           password: password,
-          authenticator: authenticator,
+          authenticator: authenticator.trim(),
           labels: groups,
           cookies: cookies,
-          useAuthenticator: authenticator.length > 0,
+          useAuthenticator: authenticator.trim().length > 0,
           authenticated: cookies.length >= 1,
           shopid: values[7] ? values[7].toString() : '',
           auth: {
