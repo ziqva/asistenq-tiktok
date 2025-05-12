@@ -27,7 +27,7 @@ export default class MainDataColumn {
     }
 
     private async initDb(callback?: Function): Promise<void> {
-        const sql: string = `CREATE TABLE IF NOT EXISTS main_data_column (
+        const sql: string = `CREATE TABLE IF NOT EXISTS main_data_column_1 (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             name VARCHAR(255),
             ind INTEGER,
@@ -41,7 +41,7 @@ export default class MainDataColumn {
         const i: number = this.data.findIndex(x => x.name === name && x.index === index)
         if(i < 0) { throw new Error('Data tidak terdefinisi') }
         const sql = `
-            UPDATE main_data_column
+            UPDATE main_data_column_1
                 SET active = ${state ? 1 : 0}
                 WHERE 
                     name = "${name}"
@@ -62,13 +62,13 @@ export default class MainDataColumn {
     }
 
     private async isActive(index: number, name: string): Promise<boolean> {
-        const sql: string = `SELECT * FROM main_data_column
+        const sql: string = `SELECT * FROM main_data_column_1
             WHERE ind = ${index}
             AND name = "${name}"`
         const res: any = await this.database.query(sql)
         if(res.length < 1) {
             // set active it 
-            const insertSql: string = `INSERT INTO main_data_column (
+            const insertSql: string = `INSERT INTO main_data_column_1 (
                 name,
                 ind,
                 active
@@ -110,32 +110,32 @@ export default class MainDataColumn {
             },
             {
                 name: "New Order",
-                index: 4,
+                index: 3,
                 active: true
             },
             {
                 name: "Dikemas",
-                index: 5,
+                index: 4,
                 active: true
             },
             {
                 name: "Dikirim",
-                index: 6,
+                index: 5,
                 active: true,
             },
             {
                 name: "Complaint",
-                index: 7,
+                index: 6,
                 active: true,
             },
             {
                 name: "Saldo",
-                index: 8,
+                index: 7,
                 active: true,
             },
             {
                 name: "Product",
-                index: 14,
+                index: 8,
                 active: true
             }
         ]
