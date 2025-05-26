@@ -306,7 +306,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller-id.tokopedia.com/product/manage"
+              "https://seller-id.tokopedia.com/homepage"
             )
           }
         />
