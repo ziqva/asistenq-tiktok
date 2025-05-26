@@ -297,6 +297,29 @@ export default function MainDataController({
       },
     },
     {
+      title: "Status",
+      align: "left",
+      width: 90,
+      render: (data) => (
+        <StatusCell
+          data={data}
+          onClick={(id) =>
+            openBrowser.openBrowser(
+              id,
+              "https://seller-id.tokopedia.com/product/manage"
+            )
+          }
+        />
+      ),
+      sorter: (a, b) => {
+        const aat = a.pinnedAt | 0
+        const bat = b.pinnedAt | 0
+        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        // return (a.moderated ? 1 : 0 - b.moderated ? 1 : 0)
+        return a.statusSort - b.statusSort
+      },
+    },
+    {
       title: "Action",
       align: "center",
       width: 60,
