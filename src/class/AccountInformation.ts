@@ -53,6 +53,31 @@ export default class AccountInformation {
   }
 
   /**
+   * Fetches the shop status from the Tokopedia Seller API and updates the given account's
+   * moderation status and status message accordingly.
+   *
+   * @param account - The account object to update with moderation information.
+   * @param headers - The HTTP headers to use for the API request.
+   * @returns A promise that resolves to the updated account object with moderation status set.
+   */
+  private async setupModerated(account: StructAccount, headers: any): Promise<StructAccount> {
+    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
+    const response = await fetch(url, {
+      headers,
+      method: "GET"
+    })
+    if(response.ok) {
+     const data: any = await response.json()
+     const shopStatus = data.data.seller.shop_status
+     account.moderated = shopStatus === 3
+     account.statusMessage = shopStatus === 3 ? "Dinonaktifkan secara permanen" : ""
+    } else {
+      account.statusMessage = ""
+    }
+    return account
+  }
+
+  /**
    * Get the moderation date for the given account.
    * @param account the account data
    * @returns the moderation date or null if not moderated or authenticated
@@ -192,6 +217,7 @@ export default class AccountInformation {
       account = await this.setupComplaint(account, headers);
       account = await this.setupDikemas(account, headers);
       account = await this.setupProduct(account, headers);
+      account = await this.setupModerated(account, headers);
       account.lastUpdated = moment().tz(this.tz).unix();
       if (autoUpdate && database) {
         this.updateData(account, database);
@@ -712,7 +738,7 @@ export default class AccountInformation {
     if(!response.ok) { return account }
     const data = await response.json()
     account.lastChatEpoch = 0
-    account.chatCount = data.data.unresponsive_conversation_count
+    account.chatCount = data.data?.unresponsive_conversation_count || 0
     return account;
   }
 

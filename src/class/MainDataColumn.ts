@@ -137,6 +137,11 @@ export default class MainDataColumn {
                 name: "Product",
                 index: 8,
                 active: true
+            },
+            {
+                name: "Status",
+                index: 9,
+                active: true
             }
         ]
     }

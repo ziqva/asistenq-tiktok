@@ -345,7 +345,11 @@ export default class Monitoring {
 private getStatusSort(account: StructAccount): number {
   let n: number = 1
   if(account.moderated) {
-    n = account.statusMessage.toString().length
+    console.log({statusMessage: account.statusMessage})
+    n = account.statusMessage?.toString()?.length
+    if(typeof n !== 'number' || isNaN(n)) {
+      n = 2
+    }
     n = n - n - n
   }
   return n
