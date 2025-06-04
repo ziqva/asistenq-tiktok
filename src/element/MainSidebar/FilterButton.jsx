@@ -135,7 +135,7 @@ export default function FilterButton({
       >
         Akun Bersaldo
       </Button>
-      {/* <Button
+      <Button
         data-aos="fade-up"
         data-aos-delay={1200}
         count={data.moderatedCount || 0}
@@ -144,7 +144,7 @@ export default function FilterButton({
         onClick={() => onActiveChange("moderasi")}
       >
         Moderasi
-      </Button> */}
+      </Button>
       <Button
         data-aos="fade-up"
         data-aos-delay={1300}
