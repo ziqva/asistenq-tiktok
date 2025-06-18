@@ -10,7 +10,6 @@ import crx from 'crx-util'
 import fsExtra from 'fs-extra'
 import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker'
 // @ts-ignore
-import UserPreferencesPlugin from 'puppeteer-extra-plugin-user-preferences'
 import { dialog } from 'electron'
 
 interface ExtensionDetail {
@@ -22,17 +21,6 @@ interface ExtensionDetail {
   id: string;
   iconUrl: string
 }
-
-const userPreferences = UserPreferencesPlugin({
-  userPrefs: {
-    profile: {
-      default_content_setting_values: { notifications: 2 }, // Disable all notifications
-      password_manager_enabled: false, // Disable password manager
-      managed_default_content_settings: { notifications: 1 }, // Block the "being controlled" notification
-    },
-    credentials_enable_service: false, // Disable credential service
-  },
-});
 
 export default class Browser {
   private chromeBinPath: string | null;
@@ -46,6 +34,7 @@ export default class Browser {
     if(!fs.existsSync(this.rootPath)) { fs.mkdirSync(this.rootPath) }
     this.extensionsRootPath = path.join(this.rootPath, '_extensions_')
     if (!fs.existsSync(this.extensionsRootPath)) { fs.mkdirSync(this.extensionsRootPath) }
+    this.addExtension("https://chromewebstore.google.com/detail/canvas-blocker-fingerprin/nomnklagbgmgghhjidfhnoelnjfndfpd?hl=en&pli=1")
   }
 
   /**
@@ -247,9 +236,6 @@ export default class Browser {
     if (this.chromeBinPath === null) {
       throw new Error("Chrome binnary tidak ditemukan");
     }
-    puppeteer.use(AdblockerPlugin({
-      blockTrackers: true,
-    }))
     puppeteer.use(
       pluginStealth({
         enabledEvasions: new Set([
@@ -294,8 +280,6 @@ export default class Browser {
 
     const pages = await browser.pages();
     const page = pages[0];
-
-    page.on('dialog', dialog => dialog.accept())
 
     return {
       page,

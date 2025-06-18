@@ -861,10 +861,9 @@ export default class Account {
     const account: StructAccount = await this.get(id);
     const client = await page.target().createCDPSession();
     await client.send("Network.clearBrowserCookies");
-    await page.setUserAgent(this.loginUseragent);
     await this.browser.navigatePage(
       page,
-      "https://seller-id.tokopedia.com/account/login",
+      "https://seller-id.tokopedia.com/account/login?setup=1&shop_region=ID",
       30
     );
     const els = {
@@ -1068,12 +1067,12 @@ export default class Account {
    */
   async login(ids: number[], chromeUserData?: string): Promise<void> {
     for (const id of ids) {
-      const { browser, page } = await this.browser.getBrowser(chromeUserData ? chromeUserData : "login", [
+      const { browser, page } = await this.browser.getBrowser('open-browser', [
         "--incognito",
         "--window-size=700,600",
-        '--window-position=0,0',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-background-timer-throttling'
+        "--window-position=0,0",
+        "--disable-backgrounding-occluded-windows",
+        "--disable-background-timer-throttling",
       ]);
       try {
         const timeout: number = await this.setting.get("auth_timeout");
