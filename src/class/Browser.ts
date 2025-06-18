@@ -34,7 +34,6 @@ export default class Browser {
     if(!fs.existsSync(this.rootPath)) { fs.mkdirSync(this.rootPath) }
     this.extensionsRootPath = path.join(this.rootPath, '_extensions_')
     if (!fs.existsSync(this.extensionsRootPath)) { fs.mkdirSync(this.extensionsRootPath) }
-    this.addExtension("https://chromewebstore.google.com/detail/canvas-blocker-fingerprin/nomnklagbgmgghhjidfhnoelnjfndfpd?hl=en&pli=1")
   }
 
   /**
