@@ -215,6 +215,7 @@ export default class AccountInformation {
       account = await this.setupShippingOrder(account, headers);
       account = await this.setupBalance(account, headers);
       account = await this.setupComplaint(account, headers);
+      account = await this.setupComplaint2(account, headers);
       account = await this.setupDikemas(account, headers);
       account = await this.setupProduct(account, headers);
       account = await this.setupModerated(account, headers);
@@ -495,6 +496,44 @@ export default class AccountInformation {
     }
     account.complaintCount = orderCount
     account.complaintPotency = orderPotency
+    return account
+  }
+
+  private async setupComplaint2(account: StructAccount, header: any): Promise<StructAccount> {
+    const url = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}`
+
+
+    const payload = {"pagination_type":0,"count":20,"offset":0,"search_condition":{"tab":{"str_value_list":["800"]},"order_sort_comp":{"str_value_list":["OrderSort_UPADTE_TIME_DESC"]},"sub_tab_pending":{"str_value_list":["sub_tab_pending_all"]}},"component_version":"hit_opt_aware_revamp"}
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        ...header,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(payload)
+    })
+    const data = await response.json()
+
+    const orderCount = data.data.total_count
+    if(orderCount > account.orderCount) {
+      const diff = orderCount - account.orderCount
+      const title =
+        `${account.name}` +
+        (this.account.getFirstGroupName(account.id)
+          ? ` - ${this.account.getFirstGroupName(account.id)}`
+          : "");
+      this.notification.show({
+        title,
+        message: `${diff} Pembatalan diajukan (komplain)`,
+      });
+    }
+    account.complaintCount += orderCount
+    const potencies: number[] = data.data.cards.map((x: any) => parseInt(x.biz_data.return_price.replace(/\D/g, '')))
+    let potency = account.complaintPotency
+    for(const p of potencies) {
+      potency+= p
+    }
+    account.complaintPotency = potency
     return account
   }
 
