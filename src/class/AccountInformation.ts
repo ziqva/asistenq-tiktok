@@ -215,11 +215,15 @@ export default class AccountInformation {
       account = await this.setupShippingOrder(account, headers);
       account = await this.setupBalance(account, headers);
       account = await this.setupComplaint(account, headers);
-      account = await this.setupComplaint2(account, headers);
+      try {
+        account = await this.setupComplaint2(account, headers);
+      } catch(_: any) {}
       account = await this.setupDikemas(account, headers);
       account = await this.setupProduct(account, headers);
       account = await this.setupModerated(account, headers);
+
       account.lastUpdated = moment().tz(this.tz).unix();
+
       if (autoUpdate && database) {
         this.updateData(account, database);
       }
