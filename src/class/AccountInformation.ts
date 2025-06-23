@@ -519,8 +519,8 @@ export default class AccountInformation {
     const data = await response.json()
 
     const orderCount = data.data.total_count
-    if(orderCount > account.orderCount) {
-      const diff = orderCount - account.orderCount
+    if(orderCount > account.complaintCount) {
+      const diff = orderCount - account.complaintCount
       const title =
         `${account.name}` +
         (this.account.getFirstGroupName(account.id)
