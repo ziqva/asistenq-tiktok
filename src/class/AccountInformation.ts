@@ -44,6 +44,7 @@ export default class AccountInformation {
     })
     if(response.ok) {
       const data: any = await response.json()
+      if(!data.data) { console.error('setupProduct error: ', data); return account; }
       const productCountRow = data.data.find((x: any) => x.tab_id === 1)
       if(productCountRow) {
         account.productCount = parseInt(productCountRow.count)
@@ -68,6 +69,8 @@ export default class AccountInformation {
     })
     if(response.ok) {
      const data: any = await response.json()
+
+      if(!data.data) { console.error('setupModerated error: ', data); return account; }
      const shopStatus = data.data.seller.shop_status
      account.moderated = shopStatus === 3
      account.statusMessage = shopStatus === 3 ? "Dinonaktifkan secara permanen" : ""
@@ -160,6 +163,8 @@ export default class AccountInformation {
       method: "GET"
     })
     const data: any = await response.json()
+    if(!data.data || !data.data.amount) { console.error('setupBalance error: ', data); return account; }
+
     const balance = parseInt(data.data.amount.amount)
     account.balance = balance
     return account
@@ -303,6 +308,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data: any = await response.json()
+    if(!data.data || !data.data.total_count) { console.error('setupShippingOrder error: ', data); return account; }
     if(data.data.total_count === 0) {
       account.dikirimCount = 0
       account.dikirimPotency = 0
@@ -356,6 +362,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
+    if(!data.data || !data.data.total_count) { console.error('setupNewOrder error: ', data); return account; }
     if(data.data.total_count === 0) {
       account.orderCount = 0
       account.orderPotency = 0
@@ -417,6 +424,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
+    if(!data.data) { console.error('setupDikemas error: ', data); return account; }
     if(data.data.total_count === 0) {
       account.dikemasCount = 0
       account.dikemasPotency = 0
@@ -475,6 +483,8 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
+    if(!data.data) { console.error('setupComplaint error: ', data); return account; }
+
     if(data.data.total_count === 0) {
       account.complaintCount = 0
       account.complaintPotency = 0
@@ -801,6 +811,12 @@ export default class AccountInformation {
     })
     if(!response.ok) { return account }
     const data: any = await response.json()
+    //  START OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
+    if(!data.data) {
+      account.authenticated = false
+      return account
+    }
+    //  END OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
     const profileUrl = data.data.seller.logo.url_list[0]
     account.avatar = profileUrl
     return account;
