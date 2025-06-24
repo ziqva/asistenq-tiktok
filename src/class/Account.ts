@@ -1067,7 +1067,7 @@ export default class Account {
    */
   async login(ids: number[], chromeUserData?: string): Promise<void> {
     for (const id of ids) {
-      const { browser, page } = await this.browser.getBrowser('open-browser', [
+      const { browser, page } = await this.browser.getBrowser('login', [
         "--incognito",
         "--window-size=700,600",
         "--window-position=0,0",
