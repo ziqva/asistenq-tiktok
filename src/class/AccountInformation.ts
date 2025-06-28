@@ -228,7 +228,7 @@ export default class AccountInformation {
       account = await this.setupModerated(account, headers);
 
       account.lastUpdated = moment().tz(this.tz).unix();
-
+      if(account.orderPotency < 100) { account.orderPotency = 0; account.orderEpoch = 0; account.orderCount = 0; }
       if (autoUpdate && database) {
         this.updateData(account, database);
       }
