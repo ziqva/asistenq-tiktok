@@ -446,7 +446,7 @@ export default class AccountInformation {
       const data = await response2.json()
       console.log({data})
       if(data.data) {
-        const _orders = data.data.main_orders
+        const _orders = data.data.main_orders || []
         orders.push(..._orders)
       }
     } else {
