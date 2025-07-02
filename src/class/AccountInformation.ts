@@ -527,8 +527,8 @@ export default class AccountInformation {
       orderPotency += parseInt(order.price_module.grand_total.price_val)
     }
     const orderCount = orders.length
-    if(orderCount > account.orderCount) {
-      const diff = orderCount - account.orderCount
+    if(orderCount > account.complaintCount) {
+      const diff = orderCount - account.complaintCount
       const title =
         `${account.name}` +
         (this.account.getFirstGroupName(account.id)
