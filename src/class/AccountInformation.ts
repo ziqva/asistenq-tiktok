@@ -273,6 +273,7 @@ export default class AccountInformation {
                   .filter((x) => x[0].toLowerCase().trim() !== "cookies" && x[0].toLowerCase().trim() !== "shopid")
                   .filter(x => x[0] !== 'auth')
                   .filter(x => x[0] !== undefined && x[0] !== 'badgeImage')
+                  .filter(x => !(typeof x[1] === 'number' && isNaN(x[1])))
                   .map((x) => {
                     return `${x[0]} = ${this.formatWithtype(x[1])}`;
                   })
@@ -454,8 +455,13 @@ export default class AccountInformation {
 
     for(const order of orders) {
       try {
+        const orderDL = parseInt(order.trade_order_module.latest_tts_time)
+        if(isNaN(orderDL)) {
+          orders = orders.filter((x: any) => x !== order)
+          continue;
+        }
         orderPotency += parseInt(order.price_module.grand_total.price_val)
-        orderDeadline.push(parseInt(order.trade_order_module.latest_tts_time))
+        orderDeadline.push(orderDL)
       } catch(err) {
         console.error(err)
       }
