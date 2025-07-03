@@ -308,7 +308,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data: any = await response.json()
-    if(!data.data || !data.data.total_count) { console.error('setupShippingOrder error: ', data); return account; }
+    if(typeof data.data.total_count !== 'number') { console.error('setupShippingOrder error: ', data); return account; }
     if(data.data.total_count === 0) {
       account.dikirimCount = 0
       account.dikirimPotency = 0
@@ -362,7 +362,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    if(!data.data || !data.data.total_count) { console.error('setupNewOrder error: ', data); return account; }
+    if(typeof data.data.total_count !== 'number') { console.error('setupNewOrder error: ', data); return account; }
     if(data.data.total_count === 0) {
       account.orderCount = 0
       account.orderPotency = 0
@@ -424,7 +424,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    if(!data.data) { console.error('setupDikemas error: ', data); return account; }
+    if(typeof data.data.total_count !== 'number') { console.error('setupDikemas error: ', data); return account; }
     
     let orders: any = data.data.main_orders || []
     let orderPotency: number = 0
@@ -444,7 +444,6 @@ export default class AccountInformation {
     })
     if(response.ok) {
       const data = await response2.json()
-      console.log({data})
       if(data.data) {
         const _orders = data.data?.main_orders || []
         orders.push(..._orders)
@@ -514,7 +513,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    if(!data.data) { console.error('setupComplaint error: ', data); return account; }
+    if(typeof data.data.total_count !== 'number') { console.error('setupComplaint error: ', data); return account; }
 
     if(data.data.total_count === 0) {
       account.complaintCount = 0
