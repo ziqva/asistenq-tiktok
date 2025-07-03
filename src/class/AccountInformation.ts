@@ -219,9 +219,9 @@ export default class AccountInformation {
       account = await this.setupShippingOrder(account, headers);
       account = await this.setupBalance(account, headers);
       account = await this.setupComplaint(account, headers);
-      try {
-        account = await this.setupComplaint2(account, headers);
-      } catch(_: any) {}
+      // try {
+      //   account = await this.setupComplaint2(account, headers);
+      // } catch(_: any) {}
       account = await this.setupDikemas(account, headers);
       account = await this.setupNewOrder(account, headers);
       account = await this.setupProduct(account, headers);
@@ -507,33 +507,70 @@ export default class AccountInformation {
    * @param header - HTTP headers used for the API request, including necessary tokens.
    * @returns A Promise resolving to the updated account object with complaint count and potency.
    */
+  /**
+   * Fetches complaint (cancellation and return) orders from Tokopedia for a given account
+   * and updates the account's complaint statistics.
+   *
+   * This method sends POST requests to Tokopedia's order list and reverse order APIs
+   * to retrieve complaint-related and return-related orders. It calculates the total
+   * monetary value of these complaints (potency) and updates the account accordingly.
+   * If new complaints are detected compared to the previous count, a notification is triggered.
+   *
+   * @param account - The account object containing authentication and complaint tracking data.
+   * @param header - HTTP headers used for the API request, including necessary tokens.
+   * @returns A Promise resolving to the updated account object with complaint count and potency.
+   */
   private async setupComplaint(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
-    const payload = {"sort_info":"1","search_condition":{"condition_list":{"urgency":{"value":["10"]},"search_tab":{"value":["101"]}}},"count":20,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
-    const response = await fetch(url, {
+    // Complaint (cancellation) orders
+    const url1 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`;
+    const payload1 = {"sort_info":"1","search_condition":{"condition_list":{"urgency":{"value":["10"]},"search_tab":{"value":["101"]}}},"count":20,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]};
+    const response1 = await fetch(url1, {
       method: "POST",
       headers: {
         ...header,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(payload)
-    })
-    const data = await response.json()
-    if(typeof data.data.total_count !== 'number') { console.error('setupComplaint error: ', data); return account; }
+      body: JSON.stringify(payload1)
+    });
+    const data1 = await response1.json();
 
-    if(data.data.total_count === 0) {
-      account.complaintCount = 0
-      account.complaintPotency = 0
-      return account
+    let complaintCount = 0;
+    let complaintPotency = 0;
+
+    if (typeof data1.data?.total_count === 'number' && data1.data.total_count > 0) {
+      const orders: any = data1.data.main_orders;
+      complaintCount += orders.length;
+      for (const order of orders) {
+        complaintPotency += parseInt(order.price_module.grand_total.price_val);
+      }
     }
-    const orders: any = data.data.main_orders
-    let orderPotency: number = 0
-    for(const order of orders) {
-      orderPotency += parseInt(order.price_module.grand_total.price_val)
-    }
-    const orderCount = orders.length
-    if(orderCount > account.complaintCount) {
-      const diff = orderCount - account.complaintCount
+
+    try {
+      // Complaint (return) orders
+      const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}`;
+      const payload2 = {"pagination_type":0,"count":20,"offset":0,"search_condition":{"tab":{"str_value_list":["800"]},"order_sort_comp":{"str_value_list":["OrderSort_UPADTE_TIME_DESC"]},"sub_tab_pending":{"str_value_list":["sub_tab_pending_all"]}},"component_version":"hit_opt_aware_revamp"};
+      const response2 = await fetch(url2, {
+        method: "POST",
+        headers: {
+          ...header,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload2)
+      });
+      const data2 = await response2.json();
+
+      if (typeof data2.data?.total_count === 'number' && data2.data.total_count > 0) {
+        complaintCount += data2.data.total_count;
+        const potencies: number[] = (data2.data.cards || []).map((x: any) => parseInt(x.biz_data.return_price.replace(/\D/g, '')));
+        for (const p of potencies) {
+          complaintPotency += p;
+        }
+      }
+    } catch(err: any) { console.error('Setup complaint2 error: ', err) }
+
+    // Notification if new complaints
+    if (complaintCount > account.complaintCount) {
+      const diff = complaintCount - account.complaintCount;
       const title =
         `${account.name}` +
         (this.account.getFirstGroupName(account.id)
@@ -544,47 +581,10 @@ export default class AccountInformation {
         message: `${diff} Pembatalan diajukan (komplain)`,
       });
     }
-    account.complaintCount = orderCount
-    account.complaintPotency = orderPotency
-    return account
-  }
 
-  private async setupComplaint2(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}`
-
-
-    const payload = {"pagination_type":0,"count":20,"offset":0,"search_condition":{"tab":{"str_value_list":["800"]},"order_sort_comp":{"str_value_list":["OrderSort_UPADTE_TIME_DESC"]},"sub_tab_pending":{"str_value_list":["sub_tab_pending_all"]}},"component_version":"hit_opt_aware_revamp"}
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        ...header,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    const data = await response.json()
-
-    const orderCount = data.data.total_count
-    if(orderCount > account.complaintCount) {
-      const diff = orderCount - account.complaintCount
-      const title =
-        `${account.name}` +
-        (this.account.getFirstGroupName(account.id)
-          ? ` - ${this.account.getFirstGroupName(account.id)}`
-          : "");
-      this.notification.show({
-        title,
-        message: `${diff} Pembatalan diajukan (komplain)`,
-      });
-    }
-    account.complaintCount += orderCount
-    const potencies: number[] = data.data.cards.map((x: any) => parseInt(x.biz_data.return_price.replace(/\D/g, '')))
-    let potency = account.complaintPotency
-    for(const p of potencies) {
-      potency+= p
-    }
-    account.complaintPotency = potency
-    return account
+    account.complaintCount = complaintCount;
+    account.complaintPotency = complaintPotency;
+    return account;
   }
 
   private filterNewOrderFromPackings(orders: any): any[] {
