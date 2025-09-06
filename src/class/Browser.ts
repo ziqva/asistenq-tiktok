@@ -4,13 +4,13 @@ import puppeteer from "puppeteer-extra";
 import pluginStealth from "puppeteer-extra-plugin-stealth";
 import * as os from "os";
 import { Page, Browser as BrowserPuppeteer } from "puppeteer";
-import axios from 'axios'
+import axios from "axios";
 // @ts-ignore
-import crx from 'crx-util'
-import fsExtra from 'fs-extra'
-import AdblockerPlugin from 'puppeteer-extra-plugin-adblocker'
+import crx from "crx-util";
+import fsExtra from "fs-extra";
+import AdblockerPlugin from "puppeteer-extra-plugin-adblocker";
 // @ts-ignore
-import { dialog } from 'electron'
+import { dialog } from "electron";
 
 interface ExtensionDetail {
   dir: string;
@@ -19,21 +19,26 @@ interface ExtensionDetail {
   icon: string;
   author: string;
   id: string;
-  iconUrl: string
+  iconUrl: string;
 }
 
 export default class Browser {
   private chromeBinPath: string | null;
   private rootPath: string;
-  private extensionsRootPath: string
+  private extensionsRootPath: string;
   constructor() {
     this.chromeBinPath = this.getChromeBinPath();
-    this.rootPath = process.platform === "darwin" 
-      ? path.join(os.homedir(), "Library", "Application Support", "AsistenQ")
-      : path.join(os.tmpdir(), "asistenq-owner-node");
-    if(!fs.existsSync(this.rootPath)) { fs.mkdirSync(this.rootPath) }
-    this.extensionsRootPath = path.join(this.rootPath, '_extensions_')
-    if (!fs.existsSync(this.extensionsRootPath)) { fs.mkdirSync(this.extensionsRootPath) }
+    this.rootPath =
+      process.platform === "darwin"
+        ? path.join(os.homedir(), "Library", "Application Support", "AsistenQ")
+        : path.join(os.tmpdir(), "asistenq-owner-node");
+    if (!fs.existsSync(this.rootPath)) {
+      fs.mkdirSync(this.rootPath);
+    }
+    this.extensionsRootPath = path.join(this.rootPath, "_extensions_");
+    if (!fs.existsSync(this.extensionsRootPath)) {
+      fs.mkdirSync(this.extensionsRootPath);
+    }
   }
 
   /**
@@ -43,49 +48,61 @@ export default class Browser {
    * representing the installed extensions.
    */
   public async extensions(): Promise<ExtensionDetail[]> {
-    let res: ExtensionDetail[] = []
-    if(!fs.existsSync(this.extensionsRootPath)) { fs.mkdirSync(this.extensionsRootPath) }
-    const dirs = fs.readdirSync(this.extensionsRootPath).map(x => path.join(this.extensionsRootPath, x))
-    for(const dir of dirs) {
-      try {
-        res.push(this.getExtensionDetails(dir, 'en'))
-      } catch(err) {}
+    let res: ExtensionDetail[] = [];
+    if (!fs.existsSync(this.extensionsRootPath)) {
+      fs.mkdirSync(this.extensionsRootPath);
     }
-    return res
+    const dirs = fs
+      .readdirSync(this.extensionsRootPath)
+      .map((x) => path.join(this.extensionsRootPath, x));
+    for (const dir of dirs) {
+      try {
+        res.push(this.getExtensionDetails(dir, "en"));
+      } catch (err) {}
+    }
+    return res;
   }
-  
+
   public async removeExtension(id: string): Promise<void> {
-    const installed = this.installedExtension(id)
-    if(!installed) { throw new Error('Extension is not installed') }
-    const extPath = path.join(this.extensionsRootPath, id)
-    fsExtra.rmSync(extPath, { force: true, recursive: true })
+    const installed = this.installedExtension(id);
+    if (!installed) {
+      throw new Error("Extension is not installed");
+    }
+    const extPath = path.join(this.extensionsRootPath, id);
+    fsExtra.rmSync(extPath, { force: true, recursive: true });
   }
 
-/**
- * This function is a private method that tests the functionality of the `getExtensionDetails` method.
- *
- * @return {Promise<void>} A Promise that resolves to void.
- */
+  /**
+   * This function is a private method that tests the functionality of the `getExtensionDetails` method.
+   *
+   * @return {Promise<void>} A Promise that resolves to void.
+   */
 
-  private resolveLocalizedString = (placeholder: string, localesDir: string, defaultLocale: string) => {
-    const localePath = path.join(localesDir, defaultLocale, 'messages.json');
+  private resolveLocalizedString = (
+    placeholder: string,
+    localesDir: string,
+    defaultLocale: string
+  ) => {
+    const localePath = path.join(localesDir, defaultLocale, "messages.json");
 
     if (!fs.existsSync(localePath)) {
       console.warn(`Locale file not found: ${localePath}`);
       return placeholder; // Return the placeholder if the locale file is not found
     }
 
-    const messages = JSON.parse(fs.readFileSync(localePath, 'utf-8'));
-    const key = placeholder.replace(/__MSG_(.*)__/, '$1');
+    const messages = JSON.parse(fs.readFileSync(localePath, "utf-8"));
+    const key = placeholder.replace(/__MSG_(.*)__/, "$1");
 
-    return messages[key] && messages[key].message ? messages[key].message : placeholder;
+    return messages[key] && messages[key].message
+      ? messages[key].message
+      : placeholder;
   };
 
   private getLastDirectoryName(fullPath: string): string {
     const normalizedPath = path.normalize(fullPath);
     const lastPart = path.basename(normalizedPath);
     if (fs.statSync(fullPath).isDirectory()) {
-        return lastPart;
+      return lastPart;
     }
     return path.basename(path.dirname(normalizedPath));
   }
@@ -98,35 +115,48 @@ export default class Browser {
    * @return {ExtensionDetail} An object containing the name, author, description, icon, directory, ID, and icon URL of the extension.
    * @throws {Error} If the manifest.json file is not found in the extracted directory.
    */
-  public getExtensionDetails(extractedDir: string, defaultLocale = 'en'): ExtensionDetail {
-    const manifestPath = path.join(extractedDir, 'manifest.json');
+  public getExtensionDetails(
+    extractedDir: string,
+    defaultLocale = "en"
+  ): ExtensionDetail {
+    const manifestPath = path.join(extractedDir, "manifest.json");
 
     if (!fs.existsSync(manifestPath)) {
-      throw new Error('manifest.json not found in the extracted directory.');
+      throw new Error("manifest.json not found in the extracted directory.");
     }
 
-    const manifest = JSON.parse(fs.readFileSync(manifestPath, 'utf-8'));
-    const localesDir = path.join(extractedDir, '_locales');
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf-8"));
+    const localesDir = path.join(extractedDir, "_locales");
 
     const extensionDetails: ExtensionDetail = {
-      name: manifest.name.includes('__MSG_')
+      name: manifest.name.includes("__MSG_")
         ? this.resolveLocalizedString(manifest.name, localesDir, defaultLocale)
-        : manifest.name || 'No name available',
-      author: manifest.author || 'No author available',
-      description: manifest.description.includes('__MSG_')
-        ? this.resolveLocalizedString(manifest.description, localesDir, defaultLocale)
-        : manifest.description || 'No description available',
-      icon: manifest.icons ? this.getLargestIconPath(manifest.icons, extractedDir) : 'No icon available',
+        : manifest.name || "No name available",
+      author: manifest.author || "No author available",
+      description: manifest.description.includes("__MSG_")
+        ? this.resolveLocalizedString(
+            manifest.description,
+            localesDir,
+            defaultLocale
+          )
+        : manifest.description || "No description available",
+      icon: manifest.icons
+        ? this.getLargestIconPath(manifest.icons, extractedDir)
+        : "No icon available",
       dir: extractedDir,
       id: this.getLastDirectoryName(extractedDir),
-      iconUrl: `http://localhost:9184/browser/ext_icon?id=${this.getLastDirectoryName(extractedDir)}`
+      iconUrl: `http://localhost:9184/browser/ext_icon?id=${this.getLastDirectoryName(
+        extractedDir
+      )}`,
     };
 
     return extensionDetails;
   }
 
   private getLargestIconPath = (icons: any, extractedDir: string) => {
-    const iconSizes = Object.keys(icons).map(Number).sort((a, b) => b - a);
+    const iconSizes = Object.keys(icons)
+      .map(Number)
+      .sort((a, b) => b - a);
     const largestIcon = icons[iconSizes[0]];
     return path.join(extractedDir, largestIcon);
   };
@@ -138,8 +168,12 @@ export default class Browser {
    * @return {boolean} True if the extension is installed, false otherwise.
    */
   private installedExtension(id: string): boolean {
-    const targetManifestFile = path.join(this.extensionsRootPath, id, 'manifest.json')
-    return fs.existsSync(targetManifestFile)
+    const targetManifestFile = path.join(
+      this.extensionsRootPath,
+      id,
+      "manifest.json"
+    );
+    return fs.existsSync(targetManifestFile);
   }
 
   /**
@@ -150,21 +184,25 @@ export default class Browser {
    * @throws {Error} If the extension is already installed.
    */
   public async addExtension(url: string): Promise<void> {
-    const id = this.getExtensionIdFromUrl(url)
-    if (this.installedExtension(id)) { throw new Error('Terjadi duplikasi extensi') }
+    const id = this.getExtensionIdFromUrl(url);
+    if (this.installedExtension(id)) {
+      throw new Error("Terjadi duplikasi extensi");
+    }
     const crxUrl = `https://clients2.google.com/service/update2/crx?response=redirect&os=linux&arch=x64&os_arch=x86_64&nacl_arch=x86-64&prod=chromium&prodchannel=unknown&prodversion=91.0.4442.4&lang=en-US&acceptformat=crx2,crx3&x=id%3D${id}%26installsource%3Dondemand%26uc`;
     const response = await axios({
       url: crxUrl,
       method: "GET",
-      responseType: 'arraybuffer'
-    })
-    const crxPath = path.join(os.tmpdir(), `_tmp.${Date.now()}.crx`)
-    fs.writeFileSync(crxPath, response.data)
+      responseType: "arraybuffer",
+    });
+    const crxPath = path.join(os.tmpdir(), `_tmp.${Date.now()}.crx`);
+    fs.writeFileSync(crxPath, response.data);
     // Extract the crx
-    const extDir = path.join(this.extensionsRootPath, id)
-    if (!fs.existsSync(extDir)) { fs.mkdirSync(extDir) }
-    await crx.parser.extract(crxPath, extDir)
-    fs.unlinkSync(crxPath)
+    const extDir = path.join(this.extensionsRootPath, id);
+    if (!fs.existsSync(extDir)) {
+      fs.mkdirSync(extDir);
+    }
+    await crx.parser.extract(crxPath, extDir);
+    fs.unlinkSync(crxPath);
   }
 
   /**
@@ -182,10 +220,9 @@ export default class Browser {
     if (match && match[1]) {
       return match[1];
     } else {
-      throw new Error('Invalid Chrome Web Store URL.');
+      throw new Error("Invalid Chrome Web Store URL.");
     }
-  };
-
+  }
 
   /**
    * Navigates the given page to the specified URL with a maximum number of retries.
@@ -202,25 +239,27 @@ export default class Browser {
   ): Promise<void> {
     let retry: number = 0;
     while (maxRetry === 0 || retry < maxRetry) {
-      if(page.isClosed()) { throw new Error('Page is closed') }
+      if (page.isClosed()) {
+        throw new Error("Page is closed");
+      }
       try {
-        await page.goto(url, { waitUntil: 'networkidle2' });
-        return
+        await page.goto(url, { waitUntil: "networkidle2" });
+        return;
       } catch (err) {
-        if(maxRetry !== 0) {
+        if (maxRetry !== 0) {
           retry++;
         }
       }
-      await new Promise(r => setTimeout(r, 1000))
+      await new Promise((r) => setTimeout(r, 1000));
     }
   }
 
   public async clearData(page: Page): Promise<void> {
     const client = await page.target().createCDPSession();
-    await client.send('Network.clearBrowserCookies');
-    await client.send('Network.clearBrowserCache');
+    await client.send("Network.clearBrowserCookies");
+    await client.send("Network.clearBrowserCache");
   }
-  
+
   /**
    * Asynchronously gets the browser and page instances.
    *
@@ -232,6 +271,14 @@ export default class Browser {
     userDataDir: string = "default",
     args: string[] = []
   ): Promise<{ page: Page; browser: BrowserPuppeteer }> {
+    if (userDataDir === "login") {
+      try {
+        fs.rmSync(this.generateUserdataDir(userDataDir), {
+          force: true,
+          recursive: true,
+        });
+      } catch (er) {}
+    }
     if (this.chromeBinPath === null) {
       throw new Error("Chrome binnary tidak ditemukan");
     }
@@ -263,15 +310,16 @@ export default class Browser {
         force: true,
         recursive: true,
       });
-    } catch (er) { }
+    } catch (er) {}
 
-    const extensionsDir = (await this.extensions()).map(x => x.dir)
+    const extensionsDir = (await this.extensions()).map((x) => x.dir);
     const browser = await puppeteer.launch({
       headless: false,
       defaultViewport: null,
-      args: [...args,
-        `--load-extension=${extensionsDir.join(',')}`,
-        `--disable-extensions-except=${extensionsDir.join(',')}`
+      args: [
+        ...args,
+        `--load-extension=${extensionsDir.join(",")}`,
+        `--disable-extensions-except=${extensionsDir.join(",")}`,
       ],
       executablePath: this.chromeBinPath,
       userDataDir: this.generateUserdataDir(userDataDir),
@@ -319,14 +367,20 @@ export default class Browser {
       "/usr/local/bin",
       "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", // Added support for macOS
     ];
-    const suffix: string = process.platform === "win32" ? "Chrome\\Application\\chrome.exe" : "Google Chrome";
+    const suffix: string =
+      process.platform === "win32"
+        ? "Chrome\\Application\\chrome.exe"
+        : "Google Chrome";
     for (const prefix of prefixs) {
       const fullPath = path.join(prefix, suffix);
       if (fs.existsSync(fullPath)) {
-      return fullPath;
+        return fullPath;
       }
     }
-    dialog.showErrorBox('Chrome Not Found', 'Google Chrome binary not found. Please install Google Chrome.');
+    dialog.showErrorBox(
+      "Chrome Not Found",
+      "Google Chrome binary not found. Please install Google Chrome."
+    );
     return null;
   }
 }

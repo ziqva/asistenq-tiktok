@@ -90,7 +90,7 @@ export default class Account {
             "sec-fetch-mode": "cors",
             "sec-fetch-site": "same-site",
             "user-agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+              "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
           };
           console.log("requesting...");
         }
@@ -358,7 +358,7 @@ export default class Account {
       "sec-fetch-mode": "cors",
       "sec-fetch-site": "same-site",
       "user-agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
       "x-source": "tokopedia-lite",
       "x-tkpd-lite-service": "icarus",
       "x-version": "bf3d806",
@@ -917,6 +917,18 @@ export default class Account {
         return;
       }
       if (account.useAuthenticator) {
+        await page.waitForSelector(els.otpField, {
+          timeout: 0,
+          visible: true,
+        });
+        // Check the button of "beralih ke verifikasi 2 langkah"
+        // await new Promise(r => setTimeout(r, 2000))
+        const verif2Stepbtn = await page.$('#TT4B_TSV_Verify_More_Btn')
+        if(verif2Stepbtn) {
+          await verif2Stepbtn.click()
+          console.log('verify 2 step clicked')
+          await new Promise(r => setTimeout(r, 1000))
+        }
         const otpField = await page.waitForSelector(els.otpField, {
           timeout: 0,
           visible: true,
@@ -964,7 +976,7 @@ export default class Account {
       ].includes(url.split("?")[0])) {
         // It's already authenticated, then, i need to get the auth params from the cookies
         await page.setRequestInterception(true)
-        this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/product/manage', 2)
+        this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/profile/seller-profile?tab=account_information', 2)
         const authParams = await this.listenAuthParams(page)
         const cookies = await page.cookies()
         const rawCookies = this.parseCookiesToRaw(cookies)
@@ -1040,7 +1052,7 @@ export default class Account {
       const listenRequest = async (req: HTTPRequest) => {
         const url = req.url()
         req.continue()
-        if(url.includes('seller/message/pull_by_category_v2')) {
+        if(url.includes('proxy/seller/helpdesk/unread_msg/get')) {
           const params: any = queryString.parse(url.split('?')[1])
           page.off('request', listenRequest)
           await page.setRequestInterception(false)
@@ -1050,7 +1062,8 @@ export default class Account {
             aid: params.aid,
             msToken: params.msToken,
             XBogus: params['X-Bogus'],
-            signature: params._signature
+            signature: ''
+            // signature: params._signature
           })
         }
       }
@@ -1071,8 +1084,6 @@ export default class Account {
         "--incognito",
         "--window-size=700,600",
         "--window-position=0,0",
-        "--disable-backgrounding-occluded-windows",
-        "--disable-background-timer-throttling",
       ]);
       try {
         const timeout: number = await this.setting.get("auth_timeout");
@@ -1371,7 +1382,7 @@ export default class Account {
       "sec-fetch-mode": "cors",
       "sec-fetch-site": "same-site",
       "user-agent":
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36",
       "x-source": "tokopedia-lite",
       "x-tkpd-lite-service": "icarus",
       "x-version": "bf3d806",
