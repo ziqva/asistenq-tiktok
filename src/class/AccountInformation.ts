@@ -215,7 +215,15 @@ export default class AccountInformation {
       
       account = await this.setupProfileDetail(account, headers);
       // account = this.setupBalance(account);
-      account = await this.setupChat(account, headers);
+      const [acc, _authenticated] = await this.setupChat(account, headers);
+      account = acc
+      if(!_authenticated) {
+        account.authenticated = false
+        if (autoUpdate && database) {
+          this.updateData(account, database);
+        }
+        return account
+      }
       account = await this.setupShippingOrder(account, headers);
       account = await this.setupBalance(account, headers);
       account = await this.setupComplaint(account, headers);
@@ -819,16 +827,17 @@ export default class AccountInformation {
    * @param {any[]} data - The data containing the chat list.
    * @return {StructAccount} - The updated account with the chat information.
    */
-  private async setupChat(account: StructAccount, headers: any): Promise<StructAccount> {
+  private async setupChat(account: StructAccount, headers: any): Promise<[StructAccount, boolean]> {
     const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
     const response = await fetch(url, {
       headers
     })
-    if(!response.ok) { return account }
+    if(!response.ok) { return [account, false] }
     const data = await response.json()
+    if(data && typeof data.code === 'number' && data.code === 98001002) { return [account, false] }
     account.lastChatEpoch = 0
     account.chatCount = data.data?.unresponsive_conversation_count || 0
-    return account;
+    return [account, true];
   }
 
   // setupBalance(account: StructAccount, data: any): StructAccount {
@@ -849,7 +858,7 @@ export default class AccountInformation {
     const data: any = await response.json()
     //  START OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
     if(!data.data) {
-      account.authenticated = false
+      // account.authenticated = false
       return account
     }
     //  END OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
