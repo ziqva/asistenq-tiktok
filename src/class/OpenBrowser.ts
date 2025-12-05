@@ -275,7 +275,7 @@ export default class OpenBrowser {
     }
     let cookies: any = account.cookies;
     await this.page.setCookie(...cookies)
-    await this.browserEngine.navigatePage(this.page, targetUrl, 10);
+    await this.browserEngine.navigatePage(this.page, targetUrl, 1);
     this.monitoring.openedAccountId = id;
     this.lastOpenedId = id;
     this.sendActiveAccount();
