@@ -132,6 +132,7 @@ export default class Account {
     const downloadResponse: Response = await fetch(downloadUrl);
     const bufferTemplate = Buffer.from(await downloadResponse.arrayBuffer());
     const workbook = new exceljs.Workbook();
+    // @ts-ignore
     await workbook.xlsx.load(bufferTemplate);
     const worksheet = workbook.getWorksheet(1);
     const accounts: StructAccount[] = await this.all();
@@ -600,6 +601,7 @@ export default class Account {
   async imports(buffer: Buffer): Promise<void> {
     this.accountImportErrors = []
     const workbook: Workbook = new exceljs.Workbook();
+    // @ts-ignore
     await workbook.xlsx.load(buffer);
     let values;
     const worksheet: Worksheet = await workbook.getWorksheet(1);
