@@ -7,13 +7,16 @@
     "outDir": "dist",
     "baseUrl": "./",
     "paths": {
-      "*": ["node_modules/*"]
+      "*": [
+        "node_modules/*"
+      ]
     },
     "allowSyntheticDefaultImports": true,
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "removeComments": true,
     "esModuleInterop": true,
+    "skipLibCheck": true
   },
   "include": [
     "src/**/*"

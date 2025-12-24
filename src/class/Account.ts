@@ -155,7 +155,7 @@ export default class Account {
     }
     for (const account of filteredAccounts) {
       let moderationDateStr = ''
-      if(type === 'all_with_moderation_date') {
+      if (type === 'all_with_moderation_date') {
         const moderationDate = await this.monitoring.getModerationDate(account)
         moderationDateStr = moderationDate ? moment(moderationDate).format('DD-MM-YYYY HH:mm') : '-'
       }
@@ -535,10 +535,10 @@ export default class Account {
     await this.db.query(sql);
     try {
       await this.setCookies(targetId, cookies)
-      if(cookies.length > 0) {
+      if (cookies.length > 0) {
         await this.setAuthenticated(targetId, true)
       }
-    } catch(err) {
+    } catch (err) {
       console.error('failed to set cookies: ', err.message)
     }
     const account: StructAccount = {
@@ -856,7 +856,7 @@ export default class Account {
       }
     }
 
-    if(closedLoginError) {
+    if (closedLoginError) {
       detectError()
     }
 
@@ -926,7 +926,7 @@ export default class Account {
         // Check the button of "beralih ke verifikasi 2 langkah"
         // await new Promise(r => setTimeout(r, 2000))
         const verif2Stepbtn = await page.$('#TT4B_TSV_Verify_More_Btn')
-        if(verif2Stepbtn) {
+        if (verif2Stepbtn) {
           await verif2Stepbtn.click()
           console.log('verify 2 step clicked')
           await new Promise(r => setTimeout(r, 1000))
@@ -974,8 +974,10 @@ export default class Account {
       const url: string = await page.url();
       if ([
         "https://seller-id.tokopedia.com/homepage",
-        "https://seller-id.tokopedia.com/download-seller-app"
+        "https://seller-id.tokopedia.com/download-seller-app",
+        'https://seller-id.tokopedia.com/sott'
       ].includes(url.split("?")[0])) {
+        console.log("Navigating into the seller profile tab")
         // It's already authenticated, then, i need to get the auth params from the cookies
         await page.setRequestInterception(true)
         this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/profile/seller-profile?tab=account_information', 2)
@@ -1043,7 +1045,7 @@ export default class Account {
         cookie: cookies
       }
     })
-    if(!response.ok) { throw new Error("Failed for get the seller id: http errno code " + response.status) }
+    if (!response.ok) { throw new Error("Failed for get the seller id: http errno code " + response.status) }
     const data: any = await response.json()
     return data.data.account.user_name
   }
@@ -1054,7 +1056,7 @@ export default class Account {
       const listenRequest = async (req: HTTPRequest) => {
         const url = req.url()
         req.continue()
-        if(url.includes('proxy/seller/helpdesk/unread_msg/get')) {
+        if (url.includes('proxy/seller/helpdesk/unread_msg/get')) {
           const params: any = queryString.parse(url.split('?')[1])
           page.off('request', listenRequest)
           await page.setRequestInterception(false)
@@ -1124,10 +1126,10 @@ export default class Account {
         } catch (err) { }
         try {
           await process.kill(browser.process().pid)
-        } catch(err) {}
+        } catch (err) { }
       }
     }
-    
+
   }
 
   async setShopId(shopid: string, id: number): Promise<void> {
@@ -1253,7 +1255,7 @@ export default class Account {
         }
       } as StructAccount);
     }
-    console.log({data})
+    console.log({ data })
     return data;
   }
 
@@ -1479,15 +1481,15 @@ export default class Account {
   public async detectLogoutandLogin(): Promise<void> {
     const accounts = await this.all()
     const { page, browser } = await this.browser.getBrowser('detlogoutlogin', [])
-    const loginQueue = new Queue({results: [], concurrency: 1, autostart: true})
-    for(const account of accounts.filter(x => x.authenticated)) {
+    const loginQueue = new Queue({ results: [], concurrency: 1, autostart: true })
+    for (const account of accounts.filter(x => x.authenticated)) {
       await this.browser.clearData(page)
       // @ts-ignore
       await page.setCookie(...account.cookies)
       await this.browser.navigatePage(page, 'view-source:https://tokopedia.com/user/settings')
       const url = await page.url()
-      if(url.includes('login')) {
-        const task = async() => {
+      if (url.includes('login')) {
+        const task = async () => {
           await this.login([account.id])
         }
         loginQueue.push(task)
