@@ -975,7 +975,8 @@ export default class Account {
       if ([
         "https://seller-id.tokopedia.com/homepage",
         "https://seller-id.tokopedia.com/download-seller-app",
-        'https://seller-id.tokopedia.com/sott'
+        'https://seller-id.tokopedia.com/sott',
+        'https://seller-id.tokopedia.com/setup'
       ].includes(url.split("?")[0])) {
         console.log("Navigating into the seller profile tab")
         // It's already authenticated, then, i need to get the auth params from the cookies
