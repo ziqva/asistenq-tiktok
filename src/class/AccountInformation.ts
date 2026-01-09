@@ -42,11 +42,11 @@ export default class AccountInformation {
       headers,
       method: "GET"
     })
-    if(response.ok) {
+    if (response.ok) {
       const data: any = await response.json()
-      if(!data.data) { console.error('setupProduct error: ', data); return account; }
+      if (!data.data) { console.error('setupProduct error: ', data); return account; }
       const productCountRow = data.data.find((x: any) => x.tab_id === 1)
-      if(productCountRow) {
+      if (productCountRow) {
         account.productCount = parseInt(productCountRow.count)
       }
     }
@@ -67,13 +67,13 @@ export default class AccountInformation {
       headers,
       method: "GET"
     })
-    if(response.ok) {
-     const data: any = await response.json()
+    if (response.ok) {
+      const data: any = await response.json()
 
-      if(!data.data) { console.error('setupModerated error: ', data); return account; }
-     const shopStatus = data.data.seller.shop_status
-     account.moderated = shopStatus === 3
-     account.statusMessage = shopStatus === 3 ? "Dinonaktifkan secara permanen" : ""
+      if (!data.data) { console.error('setupModerated error: ', data); return account; }
+      const shopStatus = data.data.seller.shop_status
+      account.moderated = shopStatus === 3
+      account.statusMessage = shopStatus === 3 ? "Dinonaktifkan secara permanen" : ""
     } else {
       account.statusMessage = ""
     }
@@ -87,7 +87,7 @@ export default class AccountInformation {
    */
   public async getModerationDate(account: StructAccount): Promise<Date | null> {
     try {
-      if(!account.moderated || !account.authenticated) { return null }
+      if (!account.moderated || !account.authenticated) { return null }
       const rawCookies: string = this.parseCookiesToRaw(account.cookies)
 
       let headers = {
@@ -99,52 +99,52 @@ export default class AccountInformation {
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
         "user-agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
         "x-source": "tokopedia-lite",
         "x-tkpd-lite-service": "icarus",
         "x-version": "bf3d806",
         accept: "application/json",
       }
 
-      const chatListPayload = {"query":"query ChatSearch($keyword:String,$status:Int,$page:Int,$size:Int,$isSeller:Int){chatSearch(keyword:$keyword,status:$status,page:$page,size:$size,isSeller:$isSeller){contact{data{contact{id role attributes{domain name shopStatus tag thumbnail}}createBy createTimeStr lastMessage msgId oppositeId oppositeType replyId roomId}}replies{hasNext data{contact{role attributes{name thumbnail}}createTimeStr lastMessage msgId productId}}}}","variables":{"keyword":"tokopedia seller","size":10,"status":1,"page":1,"isSeller":1}}
+      const chatListPayload = { "query": "query ChatSearch($keyword:String,$status:Int,$page:Int,$size:Int,$isSeller:Int){chatSearch(keyword:$keyword,status:$status,page:$page,size:$size,isSeller:$isSeller){contact{data{contact{id role attributes{domain name shopStatus tag thumbnail}}createBy createTimeStr lastMessage msgId oppositeId oppositeType replyId roomId}}replies{hasNext data{contact{role attributes{name thumbnail}}createTimeStr lastMessage msgId productId}}}}", "variables": { "keyword": "tokopedia seller", "size": 10, "status": 1, "page": 1, "isSeller": 1 } }
       const chatlistResponse = await fetch('https://gql.tokopedia.com/graphql/ChatSearch', {
         method: "POST",
         body: JSON.stringify(chatListPayload),
         headers,
       })
-      if(!chatlistResponse.ok) { return null }
+      if (!chatlistResponse.ok) { return null }
       const chatlistData = await chatlistResponse.json()
-      for(const chatListItem of chatlistData.data.chatSearch.contact.data) {
+      for (const chatListItem of chatlistData.data.chatSearch.contact.data) {
         const msgid = chatListItem.msgId
         //   retreive the message data by the message id
         // @ts-ignore
-        const messagePayload = {"query":"query ChatReplies($messageId:Int!,$keyword:String,$page:Int,$perPage:Int=10,$beforeReplyTime:String,$afterReplyTime:String,$isTextOnly:Boolean){chatReplies( msgId:$messageId keyword:$keyword page:$page perPage:$perPage beforeReplyTime:$beforeReplyTime afterReplyTime:$afterReplyTime isTextOnly:$isTextOnly){block{isPromoBlocked isBlocked blockedUntil}contacts{userId shopId name role interlocutor badge isGold domain thumbnail shopType tag status{timestamp isOnline}}textareaReply list{date chats{time replies{attachmentIDString attachment{id type fallback{message html}attributes}parentReply{attachmentID attachmentType senderID name replyID replyTimeUnixNano fraudStatus source mainText subText imageURL isExpired}blastId source isOpposite isRead msg msgIdString oldMsgId oldMsgTitle replyId replyTime role senderId senderName status fraudStatus allowDelete label}}}hasNext hasNextAfter showTimeMachine minReplyTime maxReplyTime attachmentIDs}}","variables":{"perPage":50,"messageId":msgid,"keyword":"","isTextOnly":true,"page":1,"beforeReplyTime":null,"afterReplyTime":null}}
+        const messagePayload = { "query": "query ChatReplies($messageId:Int!,$keyword:String,$page:Int,$perPage:Int=10,$beforeReplyTime:String,$afterReplyTime:String,$isTextOnly:Boolean){chatReplies( msgId:$messageId keyword:$keyword page:$page perPage:$perPage beforeReplyTime:$beforeReplyTime afterReplyTime:$afterReplyTime isTextOnly:$isTextOnly){block{isPromoBlocked isBlocked blockedUntil}contacts{userId shopId name role interlocutor badge isGold domain thumbnail shopType tag status{timestamp isOnline}}textareaReply list{date chats{time replies{attachmentIDString attachment{id type fallback{message html}attributes}parentReply{attachmentID attachmentType senderID name replyID replyTimeUnixNano fraudStatus source mainText subText imageURL isExpired}blastId source isOpposite isRead msg msgIdString oldMsgId oldMsgTitle replyId replyTime role senderId senderName status fraudStatus allowDelete label}}}hasNext hasNextAfter showTimeMachine minReplyTime maxReplyTime attachmentIDs}}", "variables": { "perPage": 50, "messageId": msgid, "keyword": "", "isTextOnly": true, "page": 1, "beforeReplyTime": null, "afterReplyTime": null } }
         const messageResponse = await fetch('https://gql.tokopedia.com/graphql/ChatReplies', {
           method: "POST",
           body: JSON.stringify(messagePayload),
           headers
         })
-        if(!messageResponse.ok) { continue }
+        if (!messageResponse.ok) { continue }
         const messageData = await messageResponse.json()
         const messages = messageData.data.chatReplies.list
-        for(const message of messages) {
-          for(const chat of message.chats) {
-            for(const reply of chat.replies) {
-              if(typeof reply.msg === 'string' && reply.msg.toLowerCase().includes('moderasi')) {
+        for (const message of messages) {
+          for (const chat of message.chats) {
+            for (const reply of chat.replies) {
+              if (typeof reply.msg === 'string' && reply.msg.toLowerCase().includes('moderasi')) {
                 const epoch = parseInt(String(reply.replyTime / 1000000))
-                if(!isNaN(epoch)) { return new Date(epoch) }
+                if (!isNaN(epoch)) { return new Date(epoch) }
               }
             }
           }
         }
       }
       return null
-    } catch(err: any) {
+    } catch (err: any) {
       console.error(err.message || err)
       return null
     }
   }
-  
+
   /**
    * Retrieves the current account balance from Tokopedia and updates the account object.
    *
@@ -163,7 +163,7 @@ export default class AccountInformation {
       method: "GET"
     })
     const data: any = await response.json()
-    if(!data.data || !data.data.amount) { console.error('setupBalance error: ', data); return account; }
+    if (!data.data || !data.data.amount) { console.error('setupBalance error: ', data); return account; }
 
     const balance = parseInt(data.data.amount.amount)
     account.balance = balance
@@ -212,12 +212,12 @@ export default class AccountInformation {
         'accept-language': 'en-US,en;q=0.9,id;q=0.8',
         'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
       };
-      
+
       account = await this.setupProfileDetail(account, headers);
       // account = this.setupBalance(account);
       const [acc, _authenticated] = await this.setupChat(account, headers);
       account = acc
-      if(!_authenticated) {
+      if (!_authenticated) {
         account.authenticated = false
         if (autoUpdate && database) {
           this.updateData(account, database);
@@ -278,14 +278,14 @@ export default class AccountInformation {
             UPDATE account
             SET
                 ${Object.entries(account)
-                  .filter((x) => x[0].toLowerCase().trim() !== "cookies" && x[0].toLowerCase().trim() !== "shopid")
-                  .filter(x => x[0] !== 'auth')
-                  .filter(x => x[0] !== undefined && x[0] !== 'badgeImage')
-                  .filter(x => !(typeof x[1] === 'number' && isNaN(x[1])))
-                  .map((x) => {
-                    return `${x[0]} = ${this.formatWithtype(x[1])}`;
-                  })
-                  .join(",\n")}
+        .filter((x) => x[0].toLowerCase().trim() !== "cookies" && x[0].toLowerCase().trim() !== "shopid")
+        .filter(x => x[0] !== 'auth')
+        .filter(x => x[0] !== undefined && x[0] !== 'badgeImage')
+        .filter(x => !(typeof x[1] === 'number' && isNaN(x[1])))
+        .map((x) => {
+          return `${x[0]} = ${this.formatWithtype(x[1])}`;
+        })
+        .join(",\n")}
             WHERE id = "${account.id}"
         `;
     await database.query(sql);
@@ -306,43 +306,191 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object with new shipped count and potency.
    */
   private async setupShippingOrder(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
-    const payload = {"sort_info":"6","search_condition":{"condition_list":{"search_tab":{"value":["102"]}}},"count":50,"pagination_type":0,"offset":0,"extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
-    const response = await fetch(url, {
-      method: "POST",
-      headers: {
-        ...headers,
-        'content-type': 'application/json'
-      },
-      body: JSON.stringify(payload)
-    })
-    const data: any = await response.json()
-    if(typeof data.data.total_count !== 'number') { console.error('setupShippingOrder error: ', data); return account; }
-    if(data.data.total_count === 0) {
-      account.dikirimCount = 0
-      account.dikirimPotency = 0
+    const functionName = 'setupShippingOrder';
+    const timestamp = moment().tz(this.tz).format('YYYY-MM-DD HH:mm:ss.SSS');
+
+    try {
+      console.log(`\n${'='.repeat(80)}`);
+      console.log(`[${timestamp}] 🔵 FUNCTION START: ${functionName}`);
+      console.log(`[${timestamp}] 📋 Account ID: ${account.id}`);
+      console.log(`[${timestamp}] 📋 Account Name: ${account.name}`);
+      console.log(`[${timestamp}] 📋 Shop ID: ${account.shopid}`);
+      console.log(`${'='.repeat(80)}\n`);
+
+      const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+      console.log({ url })
+      console.log(`[${timestamp}] 🌐 API URL: ${url.substring(0, 100)}...`);
+
+      const payload = { "sort_info": "6", "search_condition": { "condition_list": { "search_tab": { "value": ["102"] } } }, "count": 50, "pagination_type": 0, "offset": 0, "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
+
+      console.log(`[${timestamp}] 📦 Request Payload:`, JSON.stringify(payload, null, 2));
+      console.log(`[${timestamp}] 🔑 Auth Info - oecSellerId: ${account.auth.oecSellerId}`);
+      console.log(`[${timestamp}] 🔑 Auth Info - msToken: ${account.auth.msToken ? account.auth.msToken.substring(0, 20) + '...' : 'MISSING'}`);
+      console.log(`[${timestamp}] 🔑 Auth Info - XBogus: ${account.auth.XBogus ? account.auth.XBogus.substring(0, 20) + '...' : 'MISSING'}`);
+
+      console.log(`[${timestamp}] 🚀 Sending HTTP POST request...`);
+      const response = await fetch(url, {
+        method: "POST",
+        headers: {
+          ...headers,
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      })
+
+      const responseTimestamp = moment().tz(this.tz).format('YYYY-MM-DD HH:mm:ss.SSS');
+      console.log(`[${responseTimestamp}] ✅ Response received`);
+      console.log(`[${responseTimestamp}] 📊 HTTP Status: ${response.status} ${response.statusText}`);
+      console.log(`[${responseTimestamp}] 📊 Response OK: ${response.ok}`);
+      console.log(`[${responseTimestamp}] 📊 Response Headers:`, Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        console.error(`[${responseTimestamp}] ❌ HTTP ERROR: Response not OK`);
+        console.error(`[${responseTimestamp}] ❌ Status Code: ${response.status}`);
+        console.error(`[${responseTimestamp}] ❌ Status Text: ${response.statusText}`);
+        return account;
+      }
+
+      console.log(`[${responseTimestamp}] 🔄 Parsing JSON response...`);
+      const data: any = await response.json()
+      const parseTimestamp = moment().tz(this.tz).format('YYYY-MM-DD HH:mm:ss.SSS');
+
+      console.log(`[${parseTimestamp}] 📄 Raw Response Data:`, JSON.stringify(data, null, 2));
+      console.log(`[${parseTimestamp}] 🔍 Checking data structure...`);
+      console.log(`[${parseTimestamp}] 🔍 typeof data: ${typeof data}`);
+      console.log(`[${parseTimestamp}] 🔍 data is null: ${data === null}`);
+      console.log(`[${parseTimestamp}] 🔍 data is undefined: ${data === undefined}`);
+      console.log(`[${parseTimestamp}] 🔍 data keys: ${data ? Object.keys(data).join(', ') : 'N/A'}`);
+      console.log(`[${parseTimestamp}] 🔍 typeof data.data: ${typeof data?.data}`);
+      console.log(`[${parseTimestamp}] 🔍 data.data is null: ${data?.data === null}`);
+      console.log(`[${parseTimestamp}] 🔍 data.data is undefined: ${data?.data === undefined}`);
+      console.log(`[${parseTimestamp}] 🔍 data.data keys: ${data?.data ? Object.keys(data.data).join(', ') : 'N/A'}`);
+
+      // Critical check with detailed logging
+      if (!data) {
+        console.error(`[${parseTimestamp}] ❌ CRITICAL ERROR: 'data' is ${data}`);
+        console.error(`[${parseTimestamp}] ❌ Function: ${functionName}`);
+        console.error(`[${parseTimestamp}] ❌ Variable: data`);
+        console.error(`[${parseTimestamp}] ❌ Expected: object with 'data' property`);
+        console.error(`[${parseTimestamp}] ❌ Received: ${data}`);
+        console.error(`[${parseTimestamp}] ❌ Account: ${account.name} (ID: ${account.id})`);
+        return account;
+      }
+
+      if (!data.data) {
+        console.error(`[${parseTimestamp}] ❌ CRITICAL ERROR: 'data.data' is ${data.data}`);
+        console.error(`[${parseTimestamp}] ❌ Function: ${functionName}`);
+        console.error(`[${parseTimestamp}] ❌ Variable: data.data`);
+        console.error(`[${parseTimestamp}] ❌ Expected: object with 'total_count' property`);
+        console.error(`[${parseTimestamp}] ❌ Received: ${data.data}`);
+        console.error(`[${parseTimestamp}] ❌ Full data object:`, JSON.stringify(data, null, 2));
+        console.error(`[${parseTimestamp}] ❌ Account: ${account.name} (ID: ${account.id})`);
+        console.error(`[${parseTimestamp}] ❌ Possible reasons:`);
+        console.error(`[${parseTimestamp}]    - API authentication failed`);
+        console.error(`[${parseTimestamp}]    - API endpoint changed`);
+        console.error(`[${parseTimestamp}]    - Session expired`);
+        console.error(`[${parseTimestamp}]    - Rate limiting`);
+        return account;
+      }
+
+      console.log(`[${parseTimestamp}] 🔍 typeof data.data.total_count: ${typeof data.data.total_count}`);
+      console.log(`[${parseTimestamp}] 🔍 data.data.total_count value: ${data.data.total_count}`);
+
+      if (typeof data.data.total_count !== 'number') {
+        console.error(`[${parseTimestamp}] ❌ ERROR: total_count is not a number`);
+        console.error(`[${parseTimestamp}] ❌ Function: ${functionName}`);
+        console.error(`[${parseTimestamp}] ❌ Variable: data.data.total_count`);
+        console.error(`[${parseTimestamp}] ❌ Expected type: number`);
+        console.error(`[${parseTimestamp}] ❌ Received type: ${typeof data.data.total_count}`);
+        console.error(`[${parseTimestamp}] ❌ Received value: ${data.data.total_count}`);
+        console.error(`[${parseTimestamp}] ❌ Full response:`, JSON.stringify(data, null, 2));
+        console.error(`[${parseTimestamp}] ❌ Account: ${account.name} (ID: ${account.id})`);
+        return account;
+      }
+
+      console.log(`[${parseTimestamp}] ✅ total_count validation passed: ${data.data.total_count}`);
+
+      if (data.data.total_count === 0) {
+        console.log(`[${parseTimestamp}] ℹ️  No shipping orders found (total_count = 0)`);
+        account.dikirimCount = 0
+        account.dikirimPotency = 0
+        console.log(`[${parseTimestamp}] ✅ Set dikirimCount = 0, dikirimPotency = 0`);
+        return account
+      }
+
+      console.log(`[${parseTimestamp}] 📦 Processing ${data.data.total_count} shipping orders...`);
+      const orders: any = data.data.main_orders
+      console.log(`[${parseTimestamp}] 🔍 typeof orders: ${typeof orders}`);
+      console.log(`[${parseTimestamp}] 🔍 orders is Array: ${Array.isArray(orders)}`);
+      console.log(`[${parseTimestamp}] 🔍 orders length: ${orders?.length || 'N/A'}`);
+
+      let orderPotency: number = 0
+      console.log(`[${parseTimestamp}] 💰 Calculating order potency...`);
+
+      for (let i = 0; i < orders.length; i++) {
+        const order = orders[i];
+        try {
+          const priceVal = parseInt(order.price_module.grand_total.price_val);
+          console.log(`[${parseTimestamp}] 💰 Order ${i + 1}/${orders.length}: price_val = ${priceVal}`);
+          orderPotency += priceVal;
+        } catch (err: any) {
+          console.error(`[${parseTimestamp}] ❌ Error processing order ${i + 1}:`, err.message);
+          console.error(`[${parseTimestamp}] ❌ Order data:`, JSON.stringify(order, null, 2));
+        }
+      }
+
+      console.log(`[${parseTimestamp}] 💰 Total order potency: ${orderPotency}`);
+      console.log(`[${parseTimestamp}] 📊 Previous dikirimCount: ${account.dikirimCount}`);
+      console.log(`[${parseTimestamp}] 📊 Current orders count: ${orders.length}`);
+
+      if (orders.length > account.dikirimCount) {
+        const diff = orders.length - account.dikirimCount
+        console.log(`[${parseTimestamp}] 🔔 New shipped orders detected: ${diff} new order(s)`);
+
+        const title =
+          `${account.name}` +
+          (this.account.getFirstGroupName(account.id)
+            ? ` - ${this.account.getFirstGroupName(account.id)}`
+            : "");
+
+        console.log(`[${parseTimestamp}] 🔔 Sending notification: "${title}" - "${diff} Pesanan telah dikirim"`);
+        this.notification.show({
+          title,
+          message: `${diff} Pesanan telah dikirim`,
+        });
+      } else {
+        console.log(`[${parseTimestamp}] ℹ️  No new shipped orders (current: ${orders.length}, previous: ${account.dikirimCount})`);
+      }
+
+      account.dikirimCount = orders.length
+      account.dikirimPotency = orderPotency
+
+      const endTimestamp = moment().tz(this.tz).format('YYYY-MM-DD HH:mm:ss.SSS');
+      console.log(`\n${'='.repeat(80)}`);
+      console.log(`[${endTimestamp}] ✅ FUNCTION END: ${functionName}`);
+      console.log(`[${endTimestamp}] 📊 Final dikirimCount: ${account.dikirimCount}`);
+      console.log(`[${endTimestamp}] 📊 Final dikirimPotency: ${account.dikirimPotency}`);
+      console.log(`${'='.repeat(80)}\n`);
+
       return account
-    }
-    const orders: any = data.data.main_orders
-    let orderPotency: number = 0
-    for(const order of orders) {
-      orderPotency += parseInt(order.price_module.grand_total.price_val)  
-    }
-    if(orders.length > account.dikirimCount) {
-      const diff = orders.length - account.dikirimCount
-      const title =
-        `${account.name}` +
-        (this.account.getFirstGroupName(account.id)
-          ? ` - ${this.account.getFirstGroupName(account.id)}`
-          : "");
-      this.notification.show({
-        title,
-        message: `${diff} Pesanan telah dikirim`,
+    } catch (error: any) {
+      const errorTimestamp = moment().tz(this.tz).format('YYYY-MM-DD HH:mm:ss.SSS');
+      console.error(`\n${'!'.repeat(80)}`);
+      console.error(`[${errorTimestamp}] 💥 EXCEPTION CAUGHT in ${functionName}`);
+      console.error(`[${errorTimestamp}] 💥 Error Type: ${error.constructor.name}`);
+      console.error(`[${errorTimestamp}] 💥 Error Message: ${error.message}`);
+      console.error(`[${errorTimestamp}] 💥 Error Stack:\n${error.stack}`);
+      console.error(`[${errorTimestamp}] 💥 Account: ${account.name} (ID: ${account.id})`);
+      console.error(`[${errorTimestamp}] 💥 Account Shop ID: ${account.shopid}`);
+      console.error(`[${errorTimestamp}] 💥 Account Auth:`, {
+        oecSellerId: account.auth?.oecSellerId || 'MISSING',
+        hasToken: !!account.auth?.msToken,
+        hasXBogus: !!account.auth?.XBogus,
+        hasSignature: !!account.auth?.signature
       });
+      console.error(`${'!'.repeat(80)}\n`);
+      return account;
     }
-    account.dikirimCount = orders.length
-    account.dikirimPotency = orderPotency
-    return account
   }
 
   /**
@@ -360,8 +508,8 @@ export default class AccountInformation {
    * @throws Will throw an error if the API request fails or if the response cannot be parsed as JSON.
    */
   private async setupNewOrder(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
-    const payload = {"sort_info":"1","search_condition":{"condition_list":{"order_status":{"value":["1"]},"search_tab":{"value":["101"]}}},"count":20,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
+    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const payload = { "sort_info": "1", "search_condition": { "condition_list": { "order_status": { "value": ["1"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -371,8 +519,9 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    if(typeof data.data.total_count !== 'number') { console.error('setupNewOrder error: ', data); return account; }
-    if(data.data.total_count === 0) {
+    console.log({ data, type: "setupNewOrder" })
+    if (typeof data.data.total_count !== 'number') { console.error('setupNewOrder error: ', data); return account; }
+    if (data.data.total_count === 0) {
       account.orderCount = 0
       account.orderPotency = 0
       account.orderEpoch = 0
@@ -381,12 +530,12 @@ export default class AccountInformation {
     const orders: any = data.data.main_orders
     let orderPotency: number = 0
     let orderDeadline: number[] = []
-    for(const order of orders) {
+    for (const order of orders) {
       orderPotency += parseInt(order.price_module.grand_total.price_val)
       orderDeadline.push(parseInt(order.trade_order_module.latest_tts_time))
     }
     const orderCount = orders.length
-    if(orderCount > account.orderCount) {
+    if (orderCount > account.orderCount) {
       const diff = orderCount - account.orderCount
       const title =
         `${account.name}` +
@@ -422,8 +571,8 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object.
    */
   private async setupDikemas(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
-    const payload = {"sort_info":"6","search_condition":{"condition_list":{"search_tab":{"value":["110"]}}},"count":50,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
+    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const payload = { "sort_info": "6", "search_condition": { "condition_list": { "search_tab": { "value": ["110"] } } }, "count": 50, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -433,16 +582,17 @@ export default class AccountInformation {
       body: JSON.stringify(payload)
     })
     const data = await response.json()
-    if(typeof data.data.total_count !== 'number') { console.error('setupDikemas error: ', data); return account; }
-    
+    console.log({ data, type: "setupDikemas" })
+    if (typeof data.data.total_count !== 'number') { console.error('setupDikemas error: ', data); return account; }
+
     let orders: any = data.data.main_orders || []
     let orderPotency: number = 0
     let orderDeadline: number[] = []
-    
+
 
     // filter packaged orders
     const url2 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
-    const payload2 = {"sort_info":"1","search_condition":{"condition_list":{"order_status":{"value":["2"]},"search_tab":{"value":["101"]}}},"count":20,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]}
+    const payload2 = { "sort_info": "1", "search_condition": { "condition_list": { "order_status": { "value": ["2"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
     const response2 = await fetch(url2, {
       method: "POST",
       headers: {
@@ -451,9 +601,9 @@ export default class AccountInformation {
       },
       body: JSON.stringify(payload2)
     })
-    if(response.ok) {
+    if (response.ok) {
       const data = await response2.json()
-      if(data.data) {
+      if (data.data) {
         const _orders = data.data?.main_orders || []
         orders.push(..._orders)
       }
@@ -461,21 +611,21 @@ export default class AccountInformation {
       console.error(response.status, response.statusText);
     }
 
-    for(const order of orders) {
+    for (const order of orders) {
       try {
         const orderDL = parseInt(order.trade_order_module.latest_tts_time)
-        if(isNaN(orderDL)) {
+        if (isNaN(orderDL)) {
           orders = orders.filter((x: any) => x !== order)
           continue;
         }
         orderPotency += parseInt(order.price_module.grand_total.price_val)
         orderDeadline.push(orderDL)
-      } catch(err) {
+      } catch (err) {
         console.error(err)
       }
     }
 
-    if(orders === 0) {
+    if (orders === 0) {
       account.dikemasCount = 0
       account.dikemasPotency = 0
       account.dikemasEpoch = 0
@@ -483,7 +633,7 @@ export default class AccountInformation {
     }
 
     const orderCount = orders.length
-    if(orderCount > account.dikemasCount) {
+    if (orderCount > account.dikemasCount) {
       const diff = orderCount - account.dikemasCount
       const title =
         `${account.name}` +
@@ -531,7 +681,7 @@ export default class AccountInformation {
   private async setupComplaint(account: StructAccount, header: any): Promise<StructAccount> {
     // Complaint (cancellation) orders
     const url1 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`;
-    const payload1 = {"sort_info":"1","search_condition":{"condition_list":{"urgency":{"value":["10"]},"search_tab":{"value":["101"]}}},"count":20,"pagination_type":0,"offset":0,"search_cursor":"","extra_data_list":["48_hours_dispatch_tag","split_combine_tag_v1","free_sample_tag_v1","hazmat_order_tag","made_to_order_tag","pre_order_tag","pre_sell_tag","zero_lottery_tag","gift_insurance_tag","internal_purchase_tag","replacement_order_tag_v1","risk_order_tag_v1","combo_sku_tag","refundable_sample_tag","split_package_type_tag","two_day_delivery","DT_order"]};
+    const payload1 = { "sort_info": "1", "search_condition": { "condition_list": { "urgency": { "value": ["10"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] };
     const response1 = await fetch(url1, {
       method: "POST",
       headers: {
@@ -541,7 +691,7 @@ export default class AccountInformation {
       body: JSON.stringify(payload1)
     });
     const data1 = await response1.json();
-
+    console.log({ data1, type: "setupDikemas" })
     let complaintCount = 0;
     let complaintPotency = 0;
 
@@ -556,7 +706,7 @@ export default class AccountInformation {
     try {
       // Complaint (return) orders
       const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}`;
-      const payload2 = {"pagination_type":0,"count":20,"offset":0,"search_condition":{"tab":{"str_value_list":["800"]},"order_sort_comp":{"str_value_list":["OrderSort_UPADTE_TIME_DESC"]},"sub_tab_pending":{"str_value_list":["sub_tab_pending_all"]}},"component_version":"hit_opt_aware_revamp"};
+      const payload2 = { "pagination_type": 0, "count": 20, "offset": 0, "search_condition": { "tab": { "str_value_list": ["800"] }, "order_sort_comp": { "str_value_list": ["OrderSort_UPADTE_TIME_DESC"] }, "sub_tab_pending": { "str_value_list": ["sub_tab_pending_all"] } }, "component_version": "hit_opt_aware_revamp" };
       const response2 = await fetch(url2, {
         method: "POST",
         headers: {
@@ -567,6 +717,7 @@ export default class AccountInformation {
       });
       const data2 = await response2.json();
 
+      console.log({ data: data2, type: "setupComplaint" })
       if (typeof data2.data?.total_count === 'number' && data2.data.total_count > 0) {
         complaintCount += data2.data.total_count;
         const potencies: number[] = (data2.data.cards || []).map((x: any) => parseInt(x.biz_data.return_price.replace(/\D/g, '')));
@@ -574,7 +725,7 @@ export default class AccountInformation {
           complaintPotency += p;
         }
       }
-    } catch(err: any) { console.error('Setup complaint2 error: ', err) }
+    } catch (err: any) { console.error('Setup complaint2 error: ', err) }
 
     // Notification if new complaints
     if (complaintCount > account.complaintCount) {
@@ -599,21 +750,21 @@ export default class AccountInformation {
     let newOrderInvoices: string[] = []
     const currentDay = moment2().tz('Asia/Jakarta').locale('id').set('minute', 1).set('hour', 0)
     const nowEpoch = currentDay.unix()
-    for(const order of orders) {
+    for (const order of orders) {
       const orderCreatedMoment = moment2(order.order_date.replace("May", "Mei")
-                                .replace("Aug", "Agt")
-                                .replace("Oct", 'Okt')
-                                .replace("Dec", 'Des'))
-                                .tz('Asia/Jakarta')
-                                .set('minute', 59)
-                                .set('hour', 23)
-                                .unix()
+        .replace("Aug", "Agt")
+        .replace("Oct", 'Okt')
+        .replace("Dec", 'Des'))
+        .tz('Asia/Jakarta')
+        .set('minute', 59)
+        .set('hour', 23)
+        .unix()
       const diff = nowEpoch - orderCreatedMoment
       // const expectedDiff = currentDay.format('dddd') === 'Senin' ? 172800 : 86400 // 2 days for sunday and 1 day for another day
       const expectedDiff = 259200 // 3 days 
 
-      if(diff <= expectedDiff && !this.processedInvoiceMemory.has(order.order_resi)) {
-        if(order.is_shipping_printed) {
+      if (diff <= expectedDiff && !this.processedInvoiceMemory.has(order.order_resi)) {
+        if (order.is_shipping_printed) {
           // Mark as complete automatically
           this.processedInvoiceMemory.add(order.order_resi)
           continue
@@ -664,8 +815,8 @@ export default class AccountInformation {
 
     let newOrdersNew = this.filterNewOrderFromPackings(packings)
     packings = packings.filter(x => !newOrdersNew.includes(x))
-    for(const order of newOrdersNew) {
-      if(!newOrders.includes(order)) {
+    for (const order of newOrdersNew) {
+      if (!newOrders.includes(order)) {
         newOrders.push(order)
       }
     }
@@ -791,7 +942,7 @@ export default class AccountInformation {
           .replace("Oct", 'Okt')
           .replace("Dec", "Des");
         let deadlineMoment: Moment = moment(deadlineText, "D MMM; HH:mm"); // Fix date not same with moment datetype
-        if(moment().tz("Asia/Jakarta").unix() >= deadlineMoment.unix() + 2.628e+6) {
+        if (moment().tz("Asia/Jakarta").unix() >= deadlineMoment.unix() + 2.628e+6) {
           deadlineMoment = deadlineMoment.set('year', deadlineMoment.get('year') + 1)
         }
         console.log(`Discus date str: ${deadlineMoment.format('DD-MM-YYYY HH:mm')}`)
@@ -832,9 +983,9 @@ export default class AccountInformation {
     const response = await fetch(url, {
       headers
     })
-    if(!response.ok) { return [account, false] }
+    if (!response.ok) { return [account, false] }
     const data = await response.json()
-    if(data && typeof data.code === 'number' && data.code === 98001002) { return [account, false] }
+    if (data && typeof data.code === 'number' && data.code === 98001002) { return [account, false] }
     account.lastChatEpoch = 0
     account.chatCount = data.data?.unresponsive_conversation_count || 0
     return [account, true];
@@ -854,10 +1005,10 @@ export default class AccountInformation {
     const response = await fetch(url, {
       headers
     })
-    if(!response.ok) { return account }
+    if (!response.ok) { return account }
     const data: any = await response.json()
     //  START OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
-    if(!data.data) {
+    if (!data.data) {
       // account.authenticated = false
       return account
     }
