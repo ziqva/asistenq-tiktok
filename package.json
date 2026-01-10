@@ -31,6 +31,15 @@
     "win": {
       "requestedExecutionLevel": "requireAdministrator",
       "icon": "./dist/images/icon.ico",
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64",
+            "ia32"
+          ]
+        }
+      ],
       "publish": [
         {
           "provider": "github",
