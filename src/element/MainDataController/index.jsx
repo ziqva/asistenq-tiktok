@@ -82,7 +82,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "badge") {
           return a.badgeImage.toString().localeCompare(b.badgeImage.toString());
         }
@@ -104,7 +104,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "jumlah") {
           return a.chatCount - b.chatCount;
         } else if (sortType === "time") {
@@ -158,7 +158,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "jumlah") {
           return a.orderCount - b.orderCount;
         } else if (sortType === "time") {
@@ -178,7 +178,7 @@ export default function MainDataController({
           onClick={(id) =>
             openBrowser.openBrowser(
               id,
-              "https://seller-id.tokopedia.com/order?order_status[]=1&selected_sort=1&tab=to_ship"
+              "https://seller-id.tokopedia.com/order?label_status[]=3&selected_sort=1&tab=to_ship"
             )
           }
         />
@@ -186,7 +186,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "jumlah") {
           return a.dikemasCount - b.dikemasCount;
         } else if (sortType === "time") {
@@ -214,7 +214,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "jumlah") {
           return a.dikirimCount - b.dikirimCount;
         } else if (sortType === "nominal") {
@@ -242,7 +242,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         if (sortType === "jumlah") {
           return a.complaintCount - b.complaintCount;
         } else if (sortType === "nominal") {
@@ -270,7 +270,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         return a.balance - b.balance;
       },
     },
@@ -292,8 +292,8 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
-        return  (a.productCount) - b.productCount
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        return (a.productCount) - b.productCount
       },
     },
     {
@@ -314,7 +314,7 @@ export default function MainDataController({
       sorter: (a, b) => {
         const aat = a.pinnedAt | 0
         const bat = b.pinnedAt | 0
-        if(aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
+        if (aat > 0 || bat > 0) { return 0 - (aat > bat ? 1 : 0) }
         // return (a.moderated ? 1 : 0 - b.moderated ? 1 : 0)
         return a.statusSort - b.statusSort
       },
@@ -398,7 +398,7 @@ export default function MainDataController({
           // ukuran padding
           x:
             (windowWidth - 250, // ukuran taskbar
-            -20),
+              -20),
           y: windowHeight - 160,
         }}
       />
