@@ -233,11 +233,10 @@ function createWindow() {
   autoUpdater.setFeedURL({
     provider: "generic",
     url: "http://45.76.183.58/asistenq-tiktok-update/",
-    
   });
   autoUpdater.autoInstallOnAppQuit = true;
   autoUpdater.on('update-available', () => {
-    console.log({UpdateStatus: "Update avaiable, downloading..."})
+    console.log({ UpdateStatus: "Update avaiable, downloading..." })
   })
   autoUpdater.on("update-downloaded", () => {
     // autoUpdater.quitAndInstall()
@@ -294,7 +293,7 @@ let currentBrowserWindowLength = 1;
   }
 })();
 
-if(!isPackaged.default.isPackaged) {
+if (!isPackaged.default.isPackaged) {
   // account.FixPOAndPriceMain()
 }
 // account.detectLogoutandLogin()

@@ -572,7 +572,7 @@ export default class AccountInformation {
    */
   private async setupDikemas(account: StructAccount, header: any): Promise<StructAccount> {
     const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
-    const payload = { "sort_info": "6", "search_condition": { "condition_list": { "search_tab": { "value": ["110"] } } }, "count": 50, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
+    const payload = { "search_condition": { "condition_list": { "label_status": { "value": ["3"] }, "search_tab": { "value": ["101"] } } }, "offset": 0, "count": 20, "sort_info": "11", "search_cursor": "", "pagination_type": 0 }
     const response = await fetch(url, {
       method: "POST",
       headers: {
