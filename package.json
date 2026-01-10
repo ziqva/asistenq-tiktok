@@ -4,15 +4,16 @@
   "description": "A minimal application but lot of feature for monitor the Tiktok Shop accounts in one app and bundled with additional tool (ziqva.com)",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "bun tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y && xcopy src\\sounds dist\\sounds /s /e /h /y",
+    "build": "bun tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y /i && xcopy src\\controller\\frontend dist\\controller\\frontend /s /e /h /y /i && xcopy src\\sounds dist\\sounds /s /e /h /y /i",
     "watch": "tsc -w",
     "build:mac": "bun tsc --emitDecoratorMetadata --downlevelIteration && cp -R src/images dist/images && cp -R src/controller/frontend dist/controller/frontend && cp -R src/sounds dist/sounds",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && npx electron ./dist/index.js",
     "start:mac": "npm run build:mac && npx electron ./dist/index.js",
     "start:prod": "npm run build:prod && npx electron ./dist/index.js",
-    "package": "npm run build:prod && xcopy /y package.json dist && npx electron-builder",
-    "package:mac": "npm run build:prod:mac && cp package.json dist && npx electron-builder",
+    "clean:output": "npx rimraf electron/output",
+    "package": "npm run clean:output && npm run build:prod && xcopy /y package.json dist && npx electron-builder",
+    "package:mac": "npm run clean:output && npm run build:prod:mac && cp package.json dist && npx electron-builder",
     "build:prod": "npm run build && ts-node ./minifyProd.ts",
     "build:prod:mac": "npm run build:mac && ts-node ./minifyProd.ts",
     "publish": "npm run build:prod && xcopy /y package.json dist && npx electron-builder -p always"
@@ -25,10 +26,7 @@
     "directories": {
       "output": "electron/output"
     },
-    "npmRebuild": "false",
-    "npmArgs": [
-      "--legacy-peer-deps"
-    ],
+    "npmRebuild": false,
     "asar": true,
     "win": {
       "requestedExecutionLevel": "requireAdministrator",
@@ -45,15 +43,7 @@
     "mac": {
       "category": "public.app-category.utilities",
       "icon": "./dist/images/icon.icns",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ]
+      "target": "dmg"
     },
     "nsis": {
       "oneClick": false,
@@ -111,6 +101,7 @@
   "author": "Ziqva Labs",
   "license": "CC0-1.0",
   "devDependencies": {
+    "@electron/rebuild": "^3.7.2",
     "@types/adm-zip": "^0.5.5",
     "@types/async-retry": "^1.4.8",
     "@types/axios": "^0.14.0",
@@ -145,9 +136,11 @@
     "@typescript-eslint/eslint-plugin": "^4.33.0",
     "@typescript-eslint/parser": "^4.33.0",
     "electron": "^32.1.0",
+    "electron-builder": "^24.13.3",
     "electron-rebuild": "^3.2.9",
     "eslint": "^7.32.0",
     "node-pre-gyp": "0.12.0",
+    "rimraf": "^6.1.2",
     "ts-node": "^10.9.1",
     "typescript": "^5.9.3",
     "uglify-js": "^3.17.4"
@@ -156,6 +149,7 @@
     "@types/node": "^25.0.3",
     "adm-zip": "^0.5.15",
     "als-zip-tools": "^1.0.0",
+    "app-builder-bin": "^4.2.0",
     "async": "^3.2.6",
     "axios": "^1.6.2",
     "body-parser": "^1.20.2",
@@ -182,7 +176,6 @@
     "html-to-text": "^9.0.5",
     "inquirer": "^10.2.0",
     "ipull": "^3.6.2",
-    "lru-cache": "6",
     "moment": "^2.29.4",
     "moment-timezone": "^0.5.43",
     "multer": "^1.4.5-lts.1",
@@ -215,5 +208,6 @@
     "xlsx": "^0.18.5",
     "xml2js": "^0.6.2",
     "xmlhttprequest": "^1.8.0"
-  }
+  },
+  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }
