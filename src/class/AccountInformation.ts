@@ -605,7 +605,13 @@ export default class AccountInformation {
       const data = await response2.json()
       if (data.data) {
         const _orders = data.data?.main_orders || []
-        orders.push(..._orders)
+        for(const order of orders) {
+          if(_orders.find((x: any) => x.main_order_id === order.main_order_id)) {
+            continue;
+          }
+          _orders.filter((x: any) => x.main_order_id !== order.main_order_id)
+          _orders.push(order)
+        }
       }
     } else {
       console.error(response.status, response.statusText);

@@ -1,8 +1,17 @@
 import Account from '../../class/Account'
-import {Request, Response} from 'express'
+import type { Request, Response } from 'express-serve-static-core'
 
-export default async function imports(req: Request, res: Response, account: Account): Promise<void> {
+type MulterRequest = Request<any, any, any, any> & {
+    file?: {
+        buffer: Buffer
+    }
+}
+
+export default async function imports(req: MulterRequest, res: Response, account: Account): Promise<void> {
     try {
+        if (!req.file?.buffer) {
+            throw new Error('No file uploaded')
+        }
         await account.imports(req.file.buffer)
         res.json({
             error: false,
