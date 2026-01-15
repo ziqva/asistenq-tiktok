@@ -705,7 +705,7 @@ export default class AccountInformation {
       const orders: any = data1.data.main_orders;
       complaintCount += orders.length;
       for (const order of orders) {
-        complaintPotency += parseInt(order.price_module.grand_total.price_val);
+        complaintPotency += parseInt(order.amount_detail.return_price.replace(/\D/g, ''));
       }
     }
 
