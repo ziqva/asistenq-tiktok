@@ -993,7 +993,20 @@ export default class AccountInformation {
     const data = await response.json()
     if (data && typeof data.code === 'number' && data.code === 98001002) { return [account, false] }
     account.lastChatEpoch = 0
-    account.chatCount = data.data?.unresponsive_conversation_count || 0
+    const newChatCount = data.data?.unresponsive_conversation_count || 0
+    if (newChatCount > account.chatCount) {
+      const diff = newChatCount - account.chatCount
+      const title =
+        `${account.name}` +
+        (this.account.getFirstGroupName(account.id)
+          ? ` - ${this.account.getFirstGroupName(account.id)}`
+          : "");
+      this.notification.show({
+        title,
+        message: `${diff} Chat masuk`,
+      });
+    }
+    account.chatCount = newChatCount
     return [account, true];
   }
 
