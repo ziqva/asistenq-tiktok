@@ -605,8 +605,8 @@ export default class AccountInformation {
       const data = await response2.json()
       if (data.data) {
         const _orders = data.data?.main_orders || []
-        for(const order of orders) {
-          if(_orders.find((x: any) => x.main_order_id === order.main_order_id)) {
+        for (const order of orders) {
+          if (_orders.find((x: any) => x.main_order_id === order.main_order_id)) {
             continue;
           }
           _orders.filter((x: any) => x.main_order_id !== order.main_order_id)
@@ -705,7 +705,11 @@ export default class AccountInformation {
       const orders: any = data1.data.main_orders;
       complaintCount += orders.length;
       for (const order of orders) {
-        complaintPotency += parseInt(order.amount_detail.return_price.replace(/\D/g, ''));
+        try {
+          complaintPotency += parseInt(order.amount_detail.return_price.replace(/\D/g, ''));
+        } catch (err: any) {
+          complaintPotency += parseInt(order.main_order_total_price.replace(/\D/g, ''));
+        }
       }
     }
 

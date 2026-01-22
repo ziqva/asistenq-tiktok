@@ -4,9 +4,9 @@
   "description": "A minimal application but lot of feature for monitor the Tiktok Shop accounts in one app and bundled with additional tool (ziqva.com)",
   "main": "./dist/index.js",
   "scripts": {
-    "build": "bun tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y /i && xcopy src\\controller\\frontend dist\\controller\\frontend /s /e /h /y /i && xcopy src\\sounds dist\\sounds /s /e /h /y /i",
+    "build": "npx tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y /i && xcopy src\\controller\\frontend dist\\controller\\frontend /s /e /h /y /i && xcopy src\\sounds dist\\sounds /s /e /h /y /i",
     "watch": "tsc -w",
-    "build:mac": "bun tsc --emitDecoratorMetadata --downlevelIteration && cp -R src/images dist/images && cp -R src/controller/frontend dist/controller/frontend && cp -R src/sounds dist/sounds",
+    "build:mac": "npx tsc --emitDecoratorMetadata --downlevelIteration && cp -R src/images dist/images && cp -R src/controller/frontend dist/controller/frontend && cp -R src/sounds dist/sounds",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "npm run build && npx electron ./dist/index.js",
     "start:mac": "npm run build:mac && npx electron ./dist/index.js",
