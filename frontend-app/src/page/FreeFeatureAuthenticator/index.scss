@@ -1,0 +1,140 @@
+.free-feature-authenticator.page {
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  width: 550px;
+  margin: auto;
+  margin-top: 30px;
+  background: #fff;
+  padding: 17px 20px;
+  border-radius: 15px;
+  box-shadow: -1px 1px 41px -2px rgba(0, 0, 0, 0.6);
+  -webkit-box-shadow: -1px 1px 41px -2px rgba(0, 0, 0, 0.6);
+  -moz-box-shadow: -1px 1px 41px -2px rgba(0, 0, 0, 0.6);
+
+  .data-grid-container {
+    margin-top: 20px;
+
+    .action-header {
+        display: flex;
+        align-items: center;
+        padding: 0;
+        box-sizing: border-box;
+        gap: 10px;
+        transition: .2s ease-in-out all;
+        width: 70%;
+        margin: auto;
+
+        .action-item {
+            width: 100%;
+        }
+
+        .action-item:not(:disabled) .primary-icon {
+            color: var(--main-color);
+        }
+    }
+    
+    .cell-action {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .cell-otp {
+        &[data-danger="true"] {
+            .text {
+                color: var(--orange-tokped-color);
+            }
+        }
+
+        .text {
+            color: var(--green-tokped-color);
+            font-weight: 500;
+            font-size: 16px;
+            cursor: pointer;
+            user-select: none;
+        }
+    }
+    
+    .cell-account {
+        display: flex;
+        flex-direction: column;
+        gap: -2px;
+
+        .name {
+            font-weight: 500;
+            font-size: 16px;
+            color: #000000b4;
+        }
+
+        .email {
+            font-size: 11px;
+            color: dimgray;
+        }
+    }
+  }
+  
+  .empty-wrapper {
+    margin-top: 30px;
+  }
+
+  .header {
+    display: flex;
+
+    .search-field {
+        width: 200px;
+    }
+
+    .add-btn,
+    .sync-btn {
+        display: flex;
+        align-items: center;
+        gap: 3px;
+
+        .icon {
+            width: 20px;
+            height: 20px;
+        }
+        
+        .text {
+            font-size: 14px;
+            margin-top: 2px;
+        }
+    }
+
+    .right {
+        display: flex;
+        width: fit-content;
+        margin: auto;
+        margin-left: auto;
+        margin-right: 0;
+        gap: 10px;
+    }
+  }
+}
+
+
+.free-feature-authenticator-add-dialog {
+    .MuiPaper-root {
+        width: 400px;
+    }
+
+    .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}
+
+.free-feature-authenticator-edit-dialog {
+    .MuiPaper-root {
+        width: 400px;
+    }
+
+    .form {
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+}

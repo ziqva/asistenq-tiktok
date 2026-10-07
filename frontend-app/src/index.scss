@@ -1,0 +1,54 @@
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Condensed:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&display=swap');
+
+
+
+body,
+html {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+    background: var(--light);
+
+
+}
+
+* {
+    font-family: 'Roboto', sans-serif;
+    // font-family: 'Roboto Condensed', sans-serif;
+}
+
+::-webkit-scrollbar {
+    width: 9px;
+    height: 9px;
+    /* Set the width of the scrollbar */
+}
+
+/* Define the track (the area where the thumb doesn't cover) */
+::-webkit-scrollbar-track {
+    background-color: transparent;
+    /* You can change the background color as per your design */
+}
+
+/* Define the appearance of the scrollbar thumb */
+::-webkit-scrollbar-thumb {
+    background-color: #888;
+    /* Set the color of the thumb */
+    border-radius: 4px;
+    /* Set the border radius to make it rounded */
+}
+
+/* Define the appearance when hovering over the scrollbar */
+::-webkit-scrollbar-thumb:hover {
+    background-color: #555;
+    /* Change the color on hover if desired */
+}
+
+/* Define the appearance of the scrollbar corner */
+::-webkit-scrollbar-corner {
+    background-color: transparent;
+    /* You can change the background color as per your design */
+}
+
+.ant-table-tbody tr td {
+    border-color: rgba(0, 0, 0, 0.182) !important;
+}

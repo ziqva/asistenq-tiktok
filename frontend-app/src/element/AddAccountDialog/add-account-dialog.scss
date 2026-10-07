@@ -1,0 +1,80 @@
+.element.add-account-dialog {
+    .form {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        width: 300px;
+
+        .input-icon {
+            font-size: 18px;
+            color: dimgray;
+        }
+
+        .show-password-toggle {
+            padding: 0;
+            margin: 0;
+            height: 23px;
+            background: transparent;
+            outline: none !important;
+            border: none !important;
+            cursor: pointer;
+            position: relative;
+            width: 23px;
+
+            .icon {
+                color: rgba(105, 105, 105, 0.637);
+                font-size: 20px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+        }
+    }
+
+    .actions {
+        display: flex;
+        width: 100%;
+        gap: 10px;
+        align-items: center;
+
+        .left {
+            margin-left: 10px;
+            user-select: none;
+        }
+
+        .right {
+            display: flex;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: 10px;
+            gap: 10px;
+            .cancel-btn,
+            .submit-btn {
+                font-size: 13px;
+                padding: 6px 10px;
+                outline: none !important;
+                border: none !important;
+                background: var(--main-color);
+                color: #fff;
+                cursor: pointer;
+                border-radius: 8px;
+
+                &:hover:not(:disabled) {
+                    opacity: .7;
+                }
+
+                &:disabled {
+                    background: gray;
+                    cursor: not-allowed;
+                }
+            }
+
+            .cancel-btn {
+                background: red;
+            }
+        }
+
+
+    }
+}

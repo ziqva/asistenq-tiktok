@@ -1,0 +1,176 @@
+$bg: rgb(201, 210, 221);
+
+.free-feature-product-uploader.page {
+    padding: 1px;
+    overflow: hidden;
+    max-height: calc(100vh - 100px);
+    height: calc(100vh - 100px);
+    width: calc(100vw - 100px);
+    display: flex;
+    margin: auto;
+    margin-top: 20px;
+    background: #fff;
+    border-radius: 20px;
+
+    box-shadow: 0 0 5px 0px rgba(0,0,0,0.4);
+    -webkit-box-shadow: 0 0 5px 0px rgba(0,0,0,0.4);
+    -moz-box-shadow: 0 0 5px 0px rgba(0,0,0,0.4);
+    position: relative;
+    padding: 0;
+    display: flex;
+
+    .main {
+        width: calc(100% - 40px);
+        height: calc(100% - 40px);
+        max-height: calc(100% - 40px);
+        max-width: calc(100% - 40px);
+        overflow-x: hidden;
+        overflow-y: auto;
+        padding: 0px 10px;
+        margin-top: 20px;
+
+        .logs {
+            font-size: 14px;
+        }
+    }
+
+    .upload-btn {
+        display: flex;
+        width: fit-content;
+        margin-left: auto;
+        margin-right: 10px;
+    }
+
+    .action-on-finish {
+        display: flex;
+        background: #fff;
+        margin-left: auto;
+        margin-right: auto;
+        padding: 6px 10px;
+        border-radius: 15px;
+    width: calc(100% - 40px);   
+
+        .name {
+            font-size: 13px;
+            margin-left: 10px;
+            &:after {
+                content: ": "
+            }
+        }
+
+        .radio {
+            display: flex;
+            width: fit-content;
+            margin-left: auto;
+            padding: 0;
+            margin-right: 0;
+        }
+    }
+
+    .max-file-field {
+        max-width: calc(100% - 20px);
+        margin-left: auto;
+        margin-right: auto;
+    }
+
+    .select-folder-container {
+        background: #fff;
+        padding: 6px 10px;
+        width: calc(100% - 40px);
+        margin-left: auto;
+        margin-right: auto;
+        border-radius: 15px;
+        display: flex;
+        align-items: center;
+        gap: 7px;
+
+        .select-folder-btn {
+            display: flex;
+            width: fit-content;
+            margin-left: auto;
+            margin-right: 0;
+        }
+
+        .name {
+            display: flex;
+            white-space: nowrap;
+            font-size: 13px;
+            font-weight: 500;
+            max-width: 100%;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .icon-container {
+            display: flex;
+            align-items: center;
+            width: 20px;
+            height: 20px;
+            background: var(--green-tokped-bg);
+            color: var(--green-tokped-color);
+            position: relative;
+            border-radius: 50%;
+
+            &[data-danger="true"] {
+                background: var(--red-tokped-bg);
+                color: var(--red-tokped-color);
+            }
+
+            .icon {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                width: 15px;
+            }
+        }
+    }
+
+    .left-side {
+        background: var(--main-color);
+        width: 300px;
+        min-width: 300px;
+        max-width: 300px;
+        height: 100%;
+        overflow-x: hidden;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+
+        .account-container {
+            background: #fff;
+            border-radius: 15px;
+            margin-top: 10px;
+            width: calc(100% - 40px);
+            display: flex;
+            margin-left: auto;
+            margin-right: auto;
+            padding: 6px 10px;
+            align-items: center;
+            gap: 10px;
+            
+            .avatar {
+                width: 40px;
+                height: 40px;
+                border-radius: 10px;
+            }
+
+            .personal-information {
+                display: flex;
+                flex-direction: column;
+
+                .name {
+                    font-weight: 500;
+                    font-size: 14px;
+                }
+
+                .email {
+                    font-size: 12px;
+                    font-weight: 400;
+                    color: dimgray;
+                }
+            }
+        }
+    }
+}

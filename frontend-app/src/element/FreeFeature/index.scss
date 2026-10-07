@@ -1,0 +1,30 @@
+.free-feature.element {
+    margin-right: -10px;
+    margin-left: -10px;
+    .btn-toggle {
+        color: var(--main-color);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+
+        .icon {
+            width: 15px;
+        }
+    }
+
+   
+} 
+
+.free-feature-menu-icon {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    .text {
+        white-space: nowrap;
+    }
+
+    .icon {
+        width: 20px;
+    }
+}

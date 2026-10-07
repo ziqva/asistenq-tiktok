@@ -1,0 +1,285 @@
+$bg: rgb(201, 210, 221);
+$selectAccountWidth: 270px;
+$rightSideWidth: calc(100vw - 600px);
+
+.rib {
+  margin-left: 20px;
+}
+
+.slogan-item-modal {
+  width: 100%;
+
+  .item-slogan-modal-container {
+    display: flex;
+    flex-direction: column;
+    gap: 28px;
+
+    .item {
+      display: flex;
+      align-items: start;
+      gap: 10px;
+
+      button {
+        margin-top: -5px;
+      }
+    }
+  }
+
+  button {
+    width: 100%;
+    display: flex;
+    text-align: center;
+    align-items: center;
+    margin-top: 28px;
+
+    span {
+      width: fit-content;
+      display: flex;
+      margin: auto;
+    }
+  }
+}
+
+.free-feature-set-slogan.page {
+  padding: 1px;
+  overflow: hidden;
+  max-height: calc(100vh - 140px);
+  height: calc(100vh - 140px);
+  width: calc(100vw - 100px);
+  min-width: 950px;
+  display: flex;
+  margin: auto;
+  margin-top: 20px;
+  max-width: 950px;
+  background: #fff;
+  border-radius: 20px;
+
+  box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.4);
+  -webkit-box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.4);
+  -moz-box-shadow: 0 0 5px 0px rgba(0, 0, 0, 0.4);
+  position: relative;
+  padding: 0;
+  display: flex;
+
+  .main {
+    width: calc(100% - 40px);
+    height: calc(100% - 40px);
+    max-height: calc(100% - 40px);
+    max-width: calc(100% - 40px);
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 0px 10px;
+    margin-top: 20px;
+    position: relative;
+    display: flex;
+    gap: 30px;
+
+    .the-right-side {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: calc(100% - 310px) !important;
+      min-width: calc(100% - 310px) !important;
+      max-width: calc(100% - 310px) !important;
+      overflow: auto;
+      position: relative;
+
+      .item-container {
+        background: #fff;
+        border: 1px solid var(--semi-light);
+        padding: 10px 15px;
+        position: relative;
+        border-radius: 18px;
+        width: calc(100% - 100px);
+        max-width: calc(100% - 100px);
+        display: flex;
+        flex-direction: column;
+        margin-left: 20px;
+        transition: 0.1s ease-in-out all;
+        cursor: pointer;
+        margin-top: 10px;
+
+        &:hover {
+          -webkit-box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.75);
+          -moz-box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.75);
+          box-shadow: 2px 2px 5px 0px rgba(0, 0, 0, 0.75);
+        }
+
+        &[data-error="1"] {
+          border-color: red;
+        }
+      }
+
+      .range-container {
+        // background: red;
+        display: flex;
+        width: fit-content;
+        margin-inline: auto;
+
+        table {
+          // border-collapse: collapse;
+          border-spacing: 3em 10px;
+
+          th,
+          td {
+            text-align: right;
+          }
+        }
+      }
+
+      .wrapper-select-one {
+        position: absolute;
+        backdrop-filter: blur(5px);
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+
+        .container {
+          position: absolute;
+          width: fit-content;
+          height: fit-content;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+
+          .learn {
+            width: 250px;
+            max-width: 100%;
+            display: flex;
+            margin-inline: auto;
+          }
+
+          .warning {
+            display: flex;
+            margin-inline: auto;
+            margin-top: 20px;
+          }
+        }
+      }
+
+      .actions {
+        display: flex;
+        width: fit-content;
+        align-items: center;
+        gap: 10px;
+        margin-left: auto;
+        margin-right: 55px;
+      }
+
+      .main-title {
+        font-size: 19px;
+        font-weight: 700;
+        color: dimgray;
+      }
+
+      .set-days {
+        display: flex;
+        flex-direction: column;
+        margin-inline: auto;
+        margin-top: 30px;
+
+        table {
+          border-spacing: 0em 0.3em;
+          width: 500px;
+          max-width: 800px;
+          border-color: transparent;
+
+          thead th {
+            color: dimgray;
+          }
+
+          tbody {
+            * {
+              white-space: nowrap;
+            }
+          }
+
+          thead th,
+          tbody td {
+            text-align: right;
+          }
+
+          tbody td:nth-child(1) {
+            * {
+              font-size: 16px;
+            }
+            font-weight: 600;
+          }
+        }
+      }
+    }
+
+    .left-side {
+      margin-left: 20px;
+
+      .select-account {
+        width: $selectAccountWidth;
+        max-width: $selectAccountWidth;
+        min-width: $selectAccountWidth;
+
+        .search-container {
+          width: 100%;
+          display: flex;
+          align-items: center;
+          gap: 15px;
+        }
+
+        .accounts {
+          max-height: calc(100vh - 230px);
+          overflow-y: auto;
+          margin-top: 15px;
+
+          .empty {
+            width: calc(100% - 30px);
+            margin-top: 30px;
+          }
+
+          .account {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            max-width: 100%;
+            overflow-x: hidden;
+            padding-top: 0px !important;
+            padding-bottom: 0px !important;
+            height: 45px;
+            overflow: hidden;
+
+            &:hover {
+              background: #d6d6d6;
+              cursor: default;
+              user-select: none;
+            }
+
+            .no {
+              color: rgb(135, 135, 135);
+              font-size: 14px;
+            }
+
+            .avatar {
+              width: 30px;
+              border-radius: 50%;
+              height: 30px;
+            }
+
+            .name {
+              font-weight: 500;
+              font-size: 14px;
+              text-transform: lowercase;
+              color: #000;
+            }
+
+            .email {
+              font-weight: 400;
+              font-size: 12px;
+              color: dimgray;
+              text-overflow: ellipsis;
+            }
+          }
+        }
+      }
+    }
+  }
+}

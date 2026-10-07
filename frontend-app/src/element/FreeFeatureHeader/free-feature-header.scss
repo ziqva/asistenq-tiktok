@@ -1,0 +1,61 @@
+.free-feature-header.element {
+    background: rgb(201, 210, 221);
+    display: flex;
+    align-items: center;
+    height: 50px;
+    overflow: hidden;
+    width: calc(100vw - 30px);
+    margin-top: 10px;
+    margin-left: 15px;
+    border-radius: 15px;
+
+    .back-button-container {
+        margin-left: 15px;
+        .btn {
+            outline: none !important;
+            border: none;
+            background: var(--light);
+            width: 35px;
+            height: 35px;
+            border-radius: 50%;
+            cursor: pointer;
+            position: relative;
+            &:not(:disabled) {
+                &:hover {
+                    opacity: .7;
+                }
+            }
+            &:disabled{ 
+                cursor: not-allowed;
+                background: transparent;
+            }
+            .icon {
+                width: 23px;
+                height: 23px;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: #00000080;
+            }
+        }
+    }
+
+    .information {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        margin-left: 15px;
+
+        .title {
+            font-weight: 500;
+            font-size: 17px;
+            color: #00000080;
+        }
+        
+        .desc {
+            font-size: 11px;
+            color: dimgray;
+        }
+    }
+}
