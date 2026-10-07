@@ -138,8 +138,8 @@ importers:
         specifier: ^2.4.1
         version: 2.4.1(puppeteer-extra@3.3.6(@types/puppeteer@7.0.4(supports-color@8.1.1)(typescript@5.9.3))(puppeteer-core@23.11.1(supports-color@8.1.1))(puppeteer@23.11.1(supports-color@8.1.1)(typescript@5.9.3))(supports-color@8.1.1))(supports-color@8.1.1)
       queue:
-        specifier: ^7.0.0
-        version: 7.0.0
+        specifier: ^6.0.2
+        version: 6.0.2
       random-port:
         specifier: ^0.1.0
         version: 0.1.0
@@ -3403,8 +3403,8 @@ packages:
   queue-microtask@1.2.3:
     resolution: {integrity: sha512-NuaNSa6flKT5JaSYQzJok04JzTL1CA6aGhv5rfLW3PgqA+M2ChpZQnAC8h8i4ZFkBS8X5RqkDBHA7r4hej3K9A==}
 
-  queue@7.0.0:
-    resolution: {integrity: sha512-sphwS7HdfQnvrJAXUNAUgpf9H/546IE3p/5Lf2jr71O4udEYlqAhkevykumas2FYuMkX/29JMOgrRdRoYZ/X9w==}
+  queue@6.0.2:
+    resolution: {integrity: sha512-iHZWu+q3IdFZFX36ro/lKBkSvfkztY5Y7HMiPlOUjhupPcG2JMfst2KKEpu5XndviX/3UhFbRngUPNKtgvtZiA==}
 
   quick-lru@5.1.1:
     resolution: {integrity: sha512-WuyALRjWPDGtt/wzJiadO5AXY+8hZ80hVpe6MyivgraREW751X3SbhRvG3eLKOYN+8VEvqLcf3wdnt44Z4S4SA==}
@@ -7803,7 +7803,9 @@ snapshots:
 
   queue-microtask@1.2.3: {}
 
-  queue@7.0.0: {}
+  queue@6.0.2:
+    dependencies:
+      inherits: 2.0.4
 
   quick-lru@5.1.1: {}
 
