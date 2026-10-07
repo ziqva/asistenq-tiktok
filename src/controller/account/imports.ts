@@ -1,5 +1,5 @@
 import Account from '../../class/Account'
-import type { Request, Response } from 'express-serve-static-core'
+import type { Request, Response } from 'express'
 
 type MulterRequest = Request<any, any, any, any> & {
     file?: {

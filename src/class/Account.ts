@@ -983,11 +983,28 @@ export default class Account {
         await page.setRequestInterception(true)
         this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/profile/seller-profile?tab=account_information', 2)
         const authParams = await this.listenAuthParams(page)
-        const cookies = await page.cookies()
+
+        let cookies: any[] = []
+        try {
+          const cdpSession = await page.target().createCDPSession()
+          const cdpCookies = await cdpSession.send("Network.getAllCookies")
+          if (cdpCookies && Array.isArray(cdpCookies.cookies) && cdpCookies.cookies.length > 0) {
+            cookies = cdpCookies.cookies
+          }
+        } catch (e) {
+          console.warn("CDP getAllCookies failed, falling back to page.cookies():", e)
+        }
+
+        if (cookies.length === 0) {
+          cookies = await page.cookies()
+        }
+
         const rawCookies = this.parseCookiesToRaw(cookies)
         const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
         await this.setCookies(id, cookies)
-        await this.setShopId(sellerId, id)
+        if (sellerId) {
+          await this.setShopId(sellerId, id)
+        }
         await this.setAuthenticated(id, true)
         await this.setAuthParams(id, authParams)
         break;
@@ -1039,39 +1056,104 @@ export default class Account {
   private async getSellerID2(params: AccountAuth, { cookies }: {
     cookies: string
   }): Promise<string> {
-    const url = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&oec_seller_id=${params.oecSellerId}&aid=${params.aid}&app_name=i18n_ecom_shop&fp=${params.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${params.msToken}&X-Bogus=${params.XBogus}&_signature=${params.signature}`
-    const response = await fetch(url, {
-      method: "GET",
-      headers: {
-        cookie: cookies
+    try {
+      const commonUrl = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
+      const commonResponse = await fetch(commonUrl, {
+        method: "GET",
+        headers: {
+          cookie: cookies,
+          "content-type": "application/json",
+          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+        }
+      })
+      if (commonResponse.ok) {
+        const commonData: any = await commonResponse.json()
+        if (commonData?.data?.seller?.seller_id) {
+          return String(commonData.data.seller.seller_id)
+        }
+        if (commonData?.data?.seller?.name) {
+          return String(commonData.data.seller.name)
+        }
       }
-    })
-    if (!response.ok) { throw new Error("Failed for get the seller id: http errno code " + response.status) }
-    const data: any = await response.json()
-    return data.data.account.user_name
+    } catch (e) {
+      console.warn("getSellerID2 common get fallback failed:", e)
+    }
+
+    try {
+      const url = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&oec_seller_id=${params.oecSellerId || ''}&aid=${params.aid || ''}&app_name=i18n_ecom_shop&fp=${params.fp || ''}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_online=true&timezone_name=Asia%2FJakarta`
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          cookie: cookies
+        }
+      })
+      if (response.ok) {
+        const data: any = await response.json()
+        if (data?.data?.account?.user_name) {
+          return String(data.data.account.user_name)
+        }
+        if (data?.data?.seller?.seller_id) {
+          return String(data.data.seller.seller_id)
+        }
+      }
+    } catch (e) {
+      console.warn("getSellerID2 account get fallback failed:", e)
+    }
+
+    return ""
   }
 
   private listenAuthParams(page: Page): Promise<AccountAuth> {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
       console.log("Waiting until params detected!")
+      let settled = false
+
+      const cleanup = async () => {
+        try {
+          page.off('request', listenRequest)
+        } catch (e) { }
+        try {
+          await page.setRequestInterception(false)
+        } catch (e) { }
+      }
+
+      const timeout = setTimeout(async () => {
+        if (settled) return
+        settled = true
+        console.warn("listenAuthParams timed out waiting for auth params request, resolving with empty defaults")
+        await cleanup()
+        resolve({
+          fp: '',
+          oecSellerId: '',
+          aid: '',
+          msToken: '',
+          XBogus: '',
+          signature: ''
+        })
+      }, 10000)
+
       const listenRequest = async (req: HTTPRequest) => {
         const url = req.url()
-        req.continue()
-        if (url.includes('proxy/seller/helpdesk/unread_msg/get')) {
-          const params: any = queryString.parse(url.split('?')[1])
-          page.off('request', listenRequest)
-          await page.setRequestInterception(false)
+        try {
+          req.continue()
+        } catch (e) { }
+
+        if (url.includes('proxy/seller/helpdesk/unread_msg/get') && !settled) {
+          settled = true
+          clearTimeout(timeout)
+          const params: any = queryString.parse(url.split('?')[1] || '')
+          await cleanup()
           resolve({
-            fp: params.fp,
-            oecSellerId: params.oec_seller_id,
-            aid: params.aid,
-            msToken: params.msToken,
-            XBogus: params['X-Bogus'],
+            fp: (params.fp as string) || '',
+            oecSellerId: (params.oec_seller_id as string) || '',
+            aid: (params.aid as string) || '',
+            msToken: (params.msToken as string) || '',
+            XBogus: (params['X-Bogus'] as string) || '',
             signature: ''
-            // signature: params._signature
           })
         }
       }
+
       page.on('request', listenRequest)
     })
   }

@@ -1,0 +1,8 @@
+allowBuilds:
+  cpu-features: true
+  electron: true
+  puppeteer: true
+  sqlite3: true
+  ssh2: true
+minimumReleaseAgeExclude:
+  - '@electron/rebuild@4.2.1'

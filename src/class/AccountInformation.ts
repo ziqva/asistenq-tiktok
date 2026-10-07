@@ -37,7 +37,7 @@ export default class AccountInformation {
   }
 
   private async setupProduct(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/product/tab/count/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
+    const url = `https://seller-id.tokopedia.com/api/v1/product/tab/count/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
     const response = await fetch(url, {
       headers,
       method: "GET"
@@ -157,7 +157,7 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object with the current balance.
    */
   private async setupBalance(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
+    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
     const response = await fetch(url, {
       headers,
       method: "GET"
@@ -193,10 +193,6 @@ export default class AccountInformation {
         payloads.push(this.getChatPayload()); // chat count, oldest chat epoch }
 
       const rawCookies: string = this.parseCookiesToRaw(account.cookies);
-      if (account.shopid === "") {
-        account.authenticated = false;
-        await this.account.setAuthenticated(account.id, false);
-      }
       const headers = {
         cookie: rawCookies,
         accept: '*/*',
@@ -214,22 +210,17 @@ export default class AccountInformation {
       };
 
       account = await this.setupProfileDetail(account, headers);
-      // account = this.setupBalance(account);
-      const [acc, _authenticated] = await this.setupChat(account, headers);
-      account = acc
-      if (!_authenticated) {
-        account.authenticated = false
+      if (!account.authenticated) {
         if (autoUpdate && database) {
           this.updateData(account, database);
         }
-        return account
+        return account;
       }
+
+      account = await this.setupChat(account, headers);
       account = await this.setupShippingOrder(account, headers);
       account = await this.setupBalance(account, headers);
       account = await this.setupComplaint(account, headers);
-      // try {
-      //   account = await this.setupComplaint2(account, headers);
-      // } catch(_: any) {}
       account = await this.setupDikemas(account, headers);
       account = await this.setupNewOrder(account, headers);
       account = await this.setupProduct(account, headers);
@@ -591,7 +582,7 @@ export default class AccountInformation {
 
 
     // filter packaged orders
-    const url2 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
+    const url2 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload2 = { "sort_info": "1", "search_condition": { "condition_list": { "order_status": { "value": ["2"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
     const response2 = await fetch(url2, {
       method: "POST",
@@ -686,7 +677,7 @@ export default class AccountInformation {
    */
   private async setupComplaint(account: StructAccount, header: any): Promise<StructAccount> {
     // Complaint (cancellation) orders
-    const url1 = `https://seller-id.tokopedia.com/api/v2/reverse/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature==${account.auth.signature}`
+    const url1 = `https://seller-id.tokopedia.com/api/v2/reverse/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload1 = { "tab": 13, "list_condition": {}, "offset": 0, "count": 20, "pagination_type": 0 }
     const response1 = await fetch(url1, {
       method: "POST",
@@ -715,7 +706,7 @@ export default class AccountInformation {
 
     try {
       // Complaint (return) orders
-      const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}`;
+      const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`;
       const payload2 = { "pagination_type": 0, "count": 20, "offset": 0, "search_condition": { "tab": { "str_value_list": ["800"] }, "order_sort_comp": { "str_value_list": ["OrderSort_UPADTE_TIME_DESC"] }, "sub_tab_pending": { "str_value_list": ["sub_tab_pending_all"] } }, "component_version": "hit_opt_aware_revamp" };
       const response2 = await fetch(url2, {
         method: "POST",
@@ -988,30 +979,38 @@ export default class AccountInformation {
    * @param {any[]} data - The data containing the chat list.
    * @return {StructAccount} - The updated account with the chat information.
    */
-  private async setupChat(account: StructAccount, headers: any): Promise<[StructAccount, boolean]> {
-    const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta&msToken=${account.auth.msToken}&X-Bogus=${account.auth.XBogus}&_signature=${account.auth.signature}`
-    const response = await fetch(url, {
-      headers
-    })
-    if (!response.ok) { return [account, false] }
-    const data = await response.json()
-    if (data && typeof data.code === 'number' && data.code === 98001002) { return [account, false] }
-    account.lastChatEpoch = 0
-    const newChatCount = data.data?.unresponsive_conversation_count || 0
-    if (newChatCount > account.chatCount) {
-      const diff = newChatCount - account.chatCount
-      const title =
-        `${account.name}` +
-        (this.account.getFirstGroupName(account.id)
-          ? ` - ${this.account.getFirstGroupName(account.id)}`
-          : "");
-      this.notification.show({
-        title,
-        message: `${diff} Chat masuk`,
-      });
+  private async setupChat(account: StructAccount, headers: any): Promise<StructAccount> {
+    try {
+      const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+      const response = await fetch(url, {
+        headers
+      })
+      if (!response.ok) { return account }
+      const data = await response.json()
+      if (data && typeof data.code === 'number' && data.code !== 0) {
+        console.error('setupChat error code: ', data.code, data.message || '')
+        return account
+      }
+      account.lastChatEpoch = 0
+      const newChatCount = data.data?.unresponsive_conversation_count || 0
+      if (newChatCount > account.chatCount) {
+        const diff = newChatCount - account.chatCount
+        const title =
+          `${account.name}` +
+          (this.account.getFirstGroupName(account.id)
+            ? ` - ${this.account.getFirstGroupName(account.id)}`
+            : "");
+        this.notification.show({
+          title,
+          message: `${diff} Chat masuk`,
+        });
+      }
+      account.chatCount = newChatCount
+      return account;
+    } catch (err: any) {
+      console.error('setupChat exception: ', err.message || err);
+      return account;
     }
-    account.chatCount = newChatCount
-    return [account, true];
   }
 
   // setupBalance(account: StructAccount, data: any): StructAccount {
@@ -1028,16 +1027,29 @@ export default class AccountInformation {
     const response = await fetch(url, {
       headers
     })
-    if (!response.ok) { return account }
-    const data: any = await response.json()
-    //  START OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
-    if (!data.data) {
-      // account.authenticated = false
-      return account
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        account.authenticated = false;
+        await this.account.setAuthenticated(account.id, false);
+      }
+      return account;
     }
-    //  END OF DETECT WHEN THE ACCOUNT IS LOGGED OUT
-    const profileUrl = data.data.seller.logo.url_list[0]
-    account.avatar = profileUrl
+    const data: any = await response.json()
+    // Check authoritative authentication state from seller/common/get
+    if (data.code !== 0 || !data.data) {
+      account.authenticated = false;
+      await this.account.setAuthenticated(account.id, false);
+      return account;
+    }
+
+    account.authenticated = true;
+    if (data.data.seller?.seller_id) {
+      account.shopid = String(data.data.seller.seller_id);
+    }
+    if (data.data.seller?.logo?.url_list && data.data.seller.logo.url_list.length > 0) {
+      const profileUrl = data.data.seller.logo.url_list[0];
+      account.avatar = profileUrl;
+    }
     return account;
   }
 

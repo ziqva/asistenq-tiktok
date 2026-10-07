@@ -205,7 +205,13 @@ export default class OpenBrowser {
     try {
       this.detectLogoutInterval = setInterval(async () => {
         const url = page.url();
-        if (url.trim().split("?")[0] === "https://www.tokopedia.com/login") {
+        const cleanUrl = url.trim().split("?")[0];
+        if (
+          cleanUrl === "https://www.tokopedia.com/login" ||
+          cleanUrl === "https://seller-id.tokopedia.com/account/login" ||
+          cleanUrl.includes("/account/login") ||
+          cleanUrl.includes("seller-id.tokopedia.com/login")
+        ) {
           for (let i = 0; i < 10; i++) {
             try {
               await browser.close();
@@ -245,8 +251,8 @@ export default class OpenBrowser {
       throw new Error("Akun tidak ditemukan");
     }
     const account: StructAccount = await this.account.get(id);
-    if (!account.authenticated) {
-      throw new Error("Akun logout, silahkan login terlebih dahulu");
+    if (!account.cookies || !Array.isArray(account.cookies) || account.cookies.length === 0) {
+      throw new Error("Akun belum memiliki sesi login, silahkan login terlebih dahulu");
     }
     this.chats = await this.templateChat.getAccountChats(id);
     this.templateChat.setOfAccount(id, this.chats);
@@ -273,8 +279,39 @@ export default class OpenBrowser {
         this.detectLogoutInterval = null;
       });
     }
-    let cookies: any = account.cookies;
-    await this.page.setCookie(...cookies)
+    const sanitizeCookies = (rawCookies: any[]) => {
+      return rawCookies
+        .filter((c) => c && typeof c === "object" && c.name && c.value !== undefined)
+        .map((c) => {
+          const cookie: any = {
+            name: String(c.name),
+            value: String(c.value),
+          };
+          if (c.domain) cookie.domain = c.domain;
+          if (c.path) cookie.path = c.path;
+          if (typeof c.expires === "number" && c.expires > 0) cookie.expires = c.expires;
+          if (typeof c.httpOnly === "boolean") cookie.httpOnly = c.httpOnly;
+          if (typeof c.secure === "boolean") cookie.secure = c.secure;
+          if (c.sameSite && ["Strict", "Lax", "None"].includes(c.sameSite)) {
+            cookie.sameSite = c.sameSite;
+          }
+          return cookie;
+        });
+    };
+
+    const cookies = sanitizeCookies(account.cookies);
+    if (cookies.length > 0) {
+      try {
+        await this.page.setCookie(...cookies);
+      } catch (err) {
+        // Fallback: set cookies individually if batch fails
+        for (const cookie of cookies) {
+          try {
+            await this.page.setCookie(cookie);
+          } catch (e) {}
+        }
+      }
+    }
     await this.browserEngine.navigatePage(this.page, targetUrl, 1);
     this.monitoring.openedAccountId = id;
     this.lastOpenedId = id;
