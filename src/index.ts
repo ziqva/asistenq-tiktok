@@ -1,7 +1,3 @@
-// @ts-ignore
-import fixesm from "fix-esm";
-fixesm.register();
-
 import dotenv from "dotenv";
 import fs from "fs";
 dotenv.config();

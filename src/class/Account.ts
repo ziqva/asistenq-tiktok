@@ -20,7 +20,6 @@ import { AbortController } from "node-abort-controller";
 import Authenticator from "./Authenticator";
 import { shell } from 'electron'
 import Queue from 'queue'
-import chalk from "chalk";
 import shuffleArray from 'shuffle-array'
 import { downloadFile } from 'ipull'
 // @ts-ignore
@@ -29,7 +28,7 @@ import xlsx from 'xlsx'
 import Progress from 'cli-progress'
 import Memory from "./Memory";
 import moment from "moment";
-import queryString from "query-string";
+import querystring from "querystring";
 
 export default class Account {
   private db: Database;
@@ -1141,7 +1140,7 @@ export default class Account {
         if (url.includes('proxy/seller/helpdesk/unread_msg/get') && !settled) {
           settled = true
           clearTimeout(timeout)
-          const params: any = queryString.parse(url.split('?')[1] || '')
+          const params: any = querystring.parse(url.split('?')[1] || '')
           await cleanup()
           resolve({
             fp: (params.fp as string) || '',
@@ -1523,7 +1522,7 @@ export default class Account {
   }
 
   private polog(account: StructAccount, msg: string): void {
-    console.log(chalk.green.bold(`${account.email}<${account.id}>: ${msg}`))
+    console.log(`\x1b[1m\x1b[32m${account.email}<${account.id}>: ${msg}\x1b[0m`)
   }
 
   private async extractTemplate(zipPath: string): Promise<string[]> {
