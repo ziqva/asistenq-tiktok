@@ -204,7 +204,7 @@ function formatBytes(bytes) {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-async function cleanRemoteDirectory(conn, sftp, remoteDir, dryRun = false) {
+async function cleanRemoteDirectory(conn, remoteDir, dryRun = false) {
   // Strict safety guard against accidental deletion of root or system directories
   const normalizedPath = remoteDir.replace(/\\/g, '/').replace(/\/+$/, '');
   const protectedPaths = ['', '/', '/var', '/var/www', '/var/www/html', '/root', '/home', '/etc', '/usr', '/bin', '/lib'];
@@ -221,25 +221,28 @@ async function cleanRemoteDirectory(conn, sftp, remoteDir, dryRun = false) {
 
   return new Promise((resolve, reject) => {
     // Use SSH exec 'rm -rf <remoteDir>/*' to cleanly and reliably remove files and directories
-    const cmd = `find '${normalizedPath}' -mindepth 1 -delete 2>/dev/null || rm -rf '${normalizedPath}'/*`;
+    const cmd = `rm -rf '${normalizedPath}'/*`;
     conn.exec(cmd, (err, stream) => {
       if (err) {
         return reject(new Error(`Failed to execute remote directory cleanup: ${err.message}`));
       }
 
-      let stderrOutput = '';
-      stream.stderr.on('data', (d) => {
-        stderrOutput += d.toString();
-      });
+      // In Node.js streams, stream must be consumed or resumed so the 'close' event fires promptly
+      stream.resume();
+      stream.stderr.resume();
 
       stream.on('close', (code) => {
         if (code === 0 || code === null) {
           success(`Successfully purged all old files from ${colors.bold}${remoteDir}${colors.reset}`);
           resolve();
         } else {
-          warn(`Clean command exited with code ${code}: ${stderrOutput}. Proceeding...`);
+          warn(`Clean command exited with code ${code}. Proceeding...`);
           resolve();
         }
+      });
+
+      stream.on('error', (streamErr) => {
+        reject(streamErr);
       });
     });
   });
@@ -536,32 +539,39 @@ async function main() {
       await new Promise((resolve, reject) => {
         const conn = new Client();
 
-        conn.on('ready', () => {
+        conn.on('ready', async () => {
           success(`SSH connection established.`);
-          conn.sftp(async (err, sftp) => {
-            if (err) {
-              conn.end();
-              return reject(new Error(`SFTP initialization failed: ${err.message}`));
-            }
 
-            try {
-              // 4a. Clean all old files from remote target directory first
-              await cleanRemoteDirectory(conn, sftp, SSH_CONFIG.remoteDir, false);
+          try {
+            // 4a. Clean all old files from remote target directory first using SSH exec
+            await cleanRemoteDirectory(conn, SSH_CONFIG.remoteDir, false);
 
-              info(`Uploading ${artifacts.length} files to ${colors.bold}${SSH_CONFIG.remoteDir}${colors.reset}...\n`);
-
-              for (const art of artifacts) {
-                const remoteDest = `${SSH_CONFIG.remoteDir}/${art.fileName}`;
-                await uploadFileSFTP(sftp, art.filePath, remoteDest, false);
+            // 4b. Initialize SFTP session for uploading artifacts
+            conn.sftp(async (err, sftp) => {
+              if (err) {
+                conn.end();
+                return reject(new Error(`SFTP initialization failed: ${err.message}`));
               }
 
-              conn.end();
-              resolve();
-            } catch (uploadErr) {
-              conn.end();
-              reject(uploadErr);
-            }
-          });
+              try {
+                info(`Uploading ${artifacts.length} files to ${colors.bold}${SSH_CONFIG.remoteDir}${colors.reset}...\n`);
+
+                for (const art of artifacts) {
+                  const remoteDest = `${SSH_CONFIG.remoteDir}/${art.fileName}`;
+                  await uploadFileSFTP(sftp, art.filePath, remoteDest, false);
+                }
+
+                conn.end();
+                resolve();
+              } catch (uploadErr) {
+                conn.end();
+                reject(uploadErr);
+              }
+            });
+          } catch (cleanErr) {
+            conn.end();
+            reject(cleanErr);
+          }
         });
 
         conn.on('error', (err) => {
