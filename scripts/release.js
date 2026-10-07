@@ -330,12 +330,15 @@ async function main() {
     await ensureElectron();
   } catch (e) {}
 
-  // Verify that node_modules is properly hoisted to prevent packaging missing dependency errors
+  // Verify that node_modules has all required runtime dependencies to prevent packaging missing dependency errors
   try {
     require.resolve('universalify');
+    require.resolve('builder-util-runtime');
+    require.resolve('lazy-val');
+    require.resolve('tiny-typed-emitter');
   } catch (e) {
-    warn('Detected missing hoisted dependencies in node_modules. Re-installing with hoisted layout...');
-    await runCommand('pnpm', ['install', '--node-linker=hoisted']);
+    warn('Detected missing dependencies in node_modules. Re-installing...');
+    await runCommand('pnpm', ['install']);
   }
 
   if (opts.dryRun) {
@@ -402,7 +405,7 @@ async function main() {
     info('[DRY-RUN] Would clean build and output directories: dist, frontend-app/build, electron/output');
     info('[DRY-RUN] Would execute: pnpm --dir frontend-app run build');
     info('[DRY-RUN] Would execute: pnpm run build');
-    info('[DRY-RUN] Would execute: npx electron-builder --win');
+    info('[DRY-RUN] Would execute: npx electron-builder --win -p never');
   } else {
     section('Step 2: Clean, Build & Packaging Pipeline');
 
@@ -433,7 +436,7 @@ async function main() {
 
     // 3d. Electron packaging
     info('3/3 Packaging Windows Installer with electron-builder...');
-    await runCommand('npx', ['electron-builder', '--win']);
+    await runCommand('npx', ['electron-builder', '--win', '-p', 'never']);
     success('Electron Windows packaging completed.');
   }
 
