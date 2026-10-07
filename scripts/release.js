@@ -280,6 +280,12 @@ async function main() {
 
   section('AsistenQ TikTok - Automated Release System');
 
+  // Ensure Electron binary is available
+  try {
+    const ensureElectron = require('./ensure-electron');
+    await ensureElectron();
+  } catch (e) {}
+
   if (opts.dryRun) {
     warn('Running in DRY-RUN mode. No actual files will be modified or uploaded.');
   }
