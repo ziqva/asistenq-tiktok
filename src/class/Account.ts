@@ -1503,18 +1503,17 @@ export default class Account {
         const status = data.data.process_status
         const filename = data.data.file_name
         if (status === 'COMPLETED') {
-          // Download file first from the url
+          // Download file first from the url using ipull via dynamic import
           const downloadUrl = 'https://api.tokopedia.com/variants/api/v1/bulk/edit/template?filename=' + filename
-          const downloadRes = await fetch(downloadUrl, {
-            method: 'GET',
+          const { downloadFile } = await (eval('import("ipull")') as Promise<typeof import("ipull")>)
+          const downloader = await downloadFile({
+            fileName: filename,
+            directory: dir,
+            url: downloadUrl,
             headers: headers
           })
-          if (!downloadRes.ok) {
-            throw new Error(`Failed to download template file: ${downloadRes.statusText}`)
-          }
+          await downloader.download()
           const targetPath = path.join(dir, filename)
-          const buffer = await downloadRes.buffer()
-          fs.writeFileSync(targetPath, buffer)
           return targetPath
         }
       }
