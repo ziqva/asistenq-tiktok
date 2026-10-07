@@ -204,6 +204,74 @@ function formatBytes(bytes) {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
+async function cleanRemoteDirectory(sftp, remoteDir, dryRun = false) {
+  // Safety guard against accidental deletion of root or system directories
+  const normalizedPath = remoteDir.replace(/\\/g, '/').replace(/\/+$/, '');
+  const protectedPaths = ['', '/', '/var', '/var/www', '/var/www/html', '/root', '/home', '/etc', '/usr', '/bin', '/lib'];
+  if (protectedPaths.includes(normalizedPath) || !normalizedPath.startsWith('/var/www/html/')) {
+    throw new Error(`Safety violation: Refusing to clean protected or non-app directory '${remoteDir}'`);
+  }
+
+  if (dryRun) {
+    info(`[DRY-RUN] Would clean all existing files inside remote directory: ${colors.bold}${remoteDir}${colors.reset}`);
+    return;
+  }
+
+  info(`Cleaning existing files inside remote directory: ${colors.bold}${remoteDir}${colors.reset}...`);
+
+  return new Promise((resolve, reject) => {
+    sftp.readdir(remoteDir, async (err, list) => {
+      if (err) {
+        // If directory doesn't exist, we can proceed with creation during upload
+        if (err.code === 2 || err.message.includes('No such file')) {
+          warn(`Remote directory ${remoteDir} does not exist yet. Will be created on upload.`);
+          return resolve();
+        }
+        return reject(new Error(`Failed to list remote directory '${remoteDir}': ${err.message}`));
+      }
+
+      try {
+        const filesToDelete = list.filter((item) => item.filename !== '.' && item.filename !== '..');
+        if (filesToDelete.length === 0) {
+          info(`Remote directory is already empty.`);
+          return resolve();
+        }
+
+        info(`Found ${filesToDelete.length} existing remote items to delete.`);
+
+        for (const item of filesToDelete) {
+          const itemPath = `${normalizedPath}/${item.filename}`;
+          await new Promise((delResolve, delReject) => {
+            const isDir = (item.attrs.mode & 0o040000) === 0o040000;
+            if (isDir) {
+              sftp.rmdir(itemPath, (rmErr) => {
+                if (rmErr) delReject(rmErr);
+                else {
+                  info(`Deleted remote folder: ${colors.gray}${item.filename}${colors.reset}`);
+                  delResolve();
+                }
+              });
+            } else {
+              sftp.unlink(itemPath, (unErr) => {
+                if (unErr) delReject(unErr);
+                else {
+                  info(`Deleted remote file: ${colors.gray}${item.filename}${colors.reset}`);
+                  delResolve();
+                }
+              });
+            }
+          });
+        }
+
+        success(`Successfully purged all old files from ${colors.bold}${remoteDir}${colors.reset}`);
+        resolve();
+      } catch (cleanErr) {
+        reject(cleanErr);
+      }
+    });
+  });
+}
+
 async function uploadFileSFTP(sftp, localFilePath, remoteFilePath, dryRun = false) {
   const fileName = path.basename(localFilePath);
   const stats = fs.statSync(localFilePath);
@@ -482,7 +550,8 @@ async function main() {
     info(`Connecting to ${colors.bold}${SSH_CONFIG.username}@${SSH_CONFIG.host}:${SSH_CONFIG.port}${colors.reset}...`);
 
     if (opts.dryRun) {
-      info(`[DRY-RUN] Would connect to SSH2 server and upload to ${SSH_CONFIG.remoteDir}:`);
+      info(`[DRY-RUN] Would connect to SSH2 server and clean remote directory ${SSH_CONFIG.remoteDir}`);
+      info(`[DRY-RUN] Would upload newly built artifacts to ${SSH_CONFIG.remoteDir}:`);
       for (const art of artifacts) {
         info(`[DRY-RUN] Would upload ${art.fileName} -> ${SSH_CONFIG.remoteDir}/${art.fileName}`);
       }
@@ -503,6 +572,9 @@ async function main() {
             }
 
             try {
+              // 4a. Clean all old files from remote target directory first
+              await cleanRemoteDirectory(sftp, SSH_CONFIG.remoteDir, false);
+
               info(`Uploading ${artifacts.length} files to ${colors.bold}${SSH_CONFIG.remoteDir}${colors.reset}...\n`);
 
               for (const art of artifacts) {
