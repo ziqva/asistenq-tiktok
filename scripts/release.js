@@ -204,8 +204,8 @@ function formatBytes(bytes) {
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-async function cleanRemoteDirectory(sftp, remoteDir, dryRun = false) {
-  // Safety guard against accidental deletion of root or system directories
+async function cleanRemoteDirectory(conn, sftp, remoteDir, dryRun = false) {
+  // Strict safety guard against accidental deletion of root or system directories
   const normalizedPath = remoteDir.replace(/\\/g, '/').replace(/\/+$/, '');
   const protectedPaths = ['', '/', '/var', '/var/www', '/var/www/html', '/root', '/home', '/etc', '/usr', '/bin', '/lib'];
   if (protectedPaths.includes(normalizedPath) || !normalizedPath.startsWith('/var/www/html/')) {
@@ -220,54 +220,27 @@ async function cleanRemoteDirectory(sftp, remoteDir, dryRun = false) {
   info(`Cleaning existing files inside remote directory: ${colors.bold}${remoteDir}${colors.reset}...`);
 
   return new Promise((resolve, reject) => {
-    sftp.readdir(remoteDir, async (err, list) => {
+    // Use SSH exec 'rm -rf <remoteDir>/*' to cleanly and reliably remove files and directories
+    const cmd = `find '${normalizedPath}' -mindepth 1 -delete 2>/dev/null || rm -rf '${normalizedPath}'/*`;
+    conn.exec(cmd, (err, stream) => {
       if (err) {
-        // If directory doesn't exist, we can proceed with creation during upload
-        if (err.code === 2 || err.message.includes('No such file')) {
-          warn(`Remote directory ${remoteDir} does not exist yet. Will be created on upload.`);
-          return resolve();
-        }
-        return reject(new Error(`Failed to list remote directory '${remoteDir}': ${err.message}`));
+        return reject(new Error(`Failed to execute remote directory cleanup: ${err.message}`));
       }
 
-      try {
-        const filesToDelete = list.filter((item) => item.filename !== '.' && item.filename !== '..');
-        if (filesToDelete.length === 0) {
-          info(`Remote directory is already empty.`);
-          return resolve();
+      let stderrOutput = '';
+      stream.stderr.on('data', (d) => {
+        stderrOutput += d.toString();
+      });
+
+      stream.on('close', (code) => {
+        if (code === 0 || code === null) {
+          success(`Successfully purged all old files from ${colors.bold}${remoteDir}${colors.reset}`);
+          resolve();
+        } else {
+          warn(`Clean command exited with code ${code}: ${stderrOutput}. Proceeding...`);
+          resolve();
         }
-
-        info(`Found ${filesToDelete.length} existing remote items to delete.`);
-
-        for (const item of filesToDelete) {
-          const itemPath = `${normalizedPath}/${item.filename}`;
-          await new Promise((delResolve, delReject) => {
-            const isDir = (item.attrs.mode & 0o040000) === 0o040000;
-            if (isDir) {
-              sftp.rmdir(itemPath, (rmErr) => {
-                if (rmErr) delReject(rmErr);
-                else {
-                  info(`Deleted remote folder: ${colors.gray}${item.filename}${colors.reset}`);
-                  delResolve();
-                }
-              });
-            } else {
-              sftp.unlink(itemPath, (unErr) => {
-                if (unErr) delReject(unErr);
-                else {
-                  info(`Deleted remote file: ${colors.gray}${item.filename}${colors.reset}`);
-                  delResolve();
-                }
-              });
-            }
-          });
-        }
-
-        success(`Successfully purged all old files from ${colors.bold}${remoteDir}${colors.reset}`);
-        resolve();
-      } catch (cleanErr) {
-        reject(cleanErr);
-      }
+      });
     });
   });
 }
@@ -573,7 +546,7 @@ async function main() {
 
             try {
               // 4a. Clean all old files from remote target directory first
-              await cleanRemoteDirectory(sftp, SSH_CONFIG.remoteDir, false);
+              await cleanRemoteDirectory(conn, sftp, SSH_CONFIG.remoteDir, false);
 
               info(`Uploading ${artifacts.length} files to ${colors.bold}${SSH_CONFIG.remoteDir}${colors.reset}...\n`);
 
