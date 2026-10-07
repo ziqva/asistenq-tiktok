@@ -21,7 +21,6 @@ import Authenticator from "./Authenticator";
 import { shell } from 'electron'
 import Queue from 'queue'
 import shuffleArray from 'shuffle-array'
-import { downloadFile } from 'ipull'
 // @ts-ignore
 import { unzip } from 'als-zip-tools'
 import xlsx from 'xlsx'
@@ -1506,14 +1505,16 @@ export default class Account {
         if (status === 'COMPLETED') {
           // Download file first from the url
           const downloadUrl = 'https://api.tokopedia.com/variants/api/v1/bulk/edit/template?filename=' + filename
-          const downloader = await downloadFile({
-            fileName: filename,
-            directory: dir,
-            url: downloadUrl,
+          const downloadRes = await fetch(downloadUrl, {
+            method: 'GET',
             headers: headers
           })
-          await downloader.download()
+          if (!downloadRes.ok) {
+            throw new Error(`Failed to download template file: ${downloadRes.statusText}`)
+          }
           const targetPath = path.join(dir, filename)
+          const buffer = await downloadRes.buffer()
+          fs.writeFileSync(targetPath, buffer)
           return targetPath
         }
       }
