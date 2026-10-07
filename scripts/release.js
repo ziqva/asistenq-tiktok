@@ -286,6 +286,14 @@ async function main() {
     await ensureElectron();
   } catch (e) {}
 
+  // Verify that node_modules is properly hoisted to prevent packaging missing dependency errors
+  try {
+    require.resolve('universalify');
+  } catch (e) {
+    warn('Detected missing hoisted dependencies in node_modules. Re-installing with hoisted layout...');
+    await runCommand('pnpm', ['install', '--node-linker=hoisted']);
+  }
+
   if (opts.dryRun) {
     warn('Running in DRY-RUN mode. No actual files will be modified or uploaded.');
   }
@@ -346,24 +354,40 @@ async function main() {
   if (opts.skipBuild) {
     warn('Skipping build and packaging steps as --skip-build was specified.');
   } else if (opts.dryRun) {
-    section('Step 2: Build & Packaging Pipeline (Dry Run)');
+    section('Step 2: Clean, Build & Packaging Pipeline (Dry Run)');
+    info('[DRY-RUN] Would clean build and output directories: dist, frontend-app/build, electron/output');
     info('[DRY-RUN] Would execute: pnpm --dir frontend-app run build');
     info('[DRY-RUN] Would execute: pnpm run build');
     info('[DRY-RUN] Would execute: npx electron-builder --win');
   } else {
-    section('Step 2: Build & Packaging Pipeline');
+    section('Step 2: Clean, Build & Packaging Pipeline');
 
-    // 3a. React frontend build
+    // 3a. Clean prior build outputs completely
+    info('Cleaning prior build and packaging artifacts (dist, frontend-app/build, electron/output)...');
+    const dirsToClean = [
+      path.join(ROOT_DIR, 'dist'),
+      path.join(ROOT_DIR, 'frontend-app', 'build'),
+      OUTPUT_DIR,
+    ];
+    for (const dir of dirsToClean) {
+      if (fs.existsSync(dir)) {
+        fs.rmSync(dir, { recursive: true, force: true });
+        info(`Deleted old directory: ${colors.gray}${dir}${colors.reset}`);
+      }
+    }
+    success('Prior build outputs cleaned successfully.');
+
+    // 3b. React frontend build
     info('1/3 Building React Frontend (frontend-app)...');
     await runCommand('pnpm', ['--dir', 'frontend-app', 'run', 'build']);
     success('React Frontend built successfully.');
 
-    // 3b. Backend TypeScript build & asset bundling
+    // 3c. Backend TypeScript build & asset bundling
     info('2/3 Building Backend TypeScript & Bundling Assets...');
     await runCommand('pnpm', ['run', 'build']);
     success('Backend and assets built successfully.');
 
-    // 3c. Electron packaging
+    // 3d. Electron packaging
     info('3/3 Packaging Windows Installer with electron-builder...');
     await runCommand('npx', ['electron-builder', '--win']);
     success('Electron Windows packaging completed.');
