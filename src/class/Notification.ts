@@ -4,8 +4,6 @@ import * as path from "path";
 import sound from "sound-play";
 import Setting from "./Setting";
 import * as electron from 'electron'
-// @ts-ignore
-import * as isPackaged from 'electron-is-packaged'
 import PublicMonitoring from "./PublicMonitoring";
 
 export default class Notification {
@@ -17,7 +15,7 @@ export default class Notification {
   private soundDir: string;
   public publicMonitoring: PublicMonitoring | null = null
   constructor({ setting }: { setting: Setting }) {
-    this.soundDir = isPackaged.isPackaged ? path.join(process.resourcesPath, 'dist/sounds') : path.join(__dirname, "../sounds");
+    this.soundDir = (electron.app && electron.app.isPackaged) ? path.join(process.resourcesPath, 'dist/sounds') : path.join(__dirname, "../sounds");
     this.setting = setting;
     this.toastActive = true;
     this.soundActive = true;

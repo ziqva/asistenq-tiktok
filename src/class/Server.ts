@@ -1,6 +1,5 @@
 import express from "express";
-// @ts-ignore
-import isPackaged from "electron-is-packaged";
+import { app } from "electron";
 import controller from "../controller";
 import http from "http";
 import { Server as SocketServer } from "socket.io";
@@ -107,7 +106,7 @@ export default class Server {
     this.application = new App();
     this.setting = setting;
     this.zoomLevel = zoomLevel;
-    this.isPackaged = isPackaged.isPackaged;
+    this.isPackaged = app && app.isPackaged ? true : false;
     this.account = account;
     this.database = database;
     this.sockets = [];
@@ -524,6 +523,7 @@ export default class Server {
         this.authenticator.sockets.push(socket);
         this.monitoring.sendBotStatus();
         this.monitoring.sendActiveFilter();
+        this.monitoring.sendMainData();
         socket.on("disconnect", () => {
           this.monitoring.sockets = this.monitoring.sockets.filter(
             (x) => x !== socket,
@@ -576,12 +576,11 @@ export default class Server {
     const server = http.createServer(this.app);
     const io = new SocketServer(server, {
       cors: {
-        origin: this.isPackaged
-          ? `http://localhost:${this.port}`
-          : "http://localhost:3000",
+        origin: (origin, callback) => callback(null, true),
         methods: ["POST", "GET"],
         credentials: true,
       },
+      allowEIO3: true,
     });
     this.prepareSocket(io);
     server.listen(this.port, () => {

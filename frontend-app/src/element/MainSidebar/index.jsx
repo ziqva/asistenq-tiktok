@@ -38,6 +38,8 @@ export default function MainSidebar({
         setRefreshData(data);
       }
     };
+
+    sidebarData.getData();
   }, []);
 
   return (

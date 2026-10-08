@@ -33,8 +33,6 @@ import MainDataColumn from "./class/MainDataColumn";
 import LiveChat from "./class/LiveChat";
 import OperationalSchedule from "./class/OperasionalSchedule";
 import ShippingManager from "./class/ShippingManager";
-// @ts-ignore
-import * as isPackaged from "electron-is-packaged";
 import TemplateChat from "./class/TemplateChat";
 import Holiday from "./class/Holiday";
 import Slogan from "./class/Slogan";
@@ -245,7 +243,7 @@ function createWindow() {
     ]);
     contextMenu.popup();
   });
-  const url = isPackaged.default.isPackaged
+  const url = app.isPackaged
     ? "http://localhost:9184/authentication"
     : "http://localhost:3000/authentication";
   const filters: WebRequestFilter = {
@@ -329,7 +327,7 @@ let currentBrowserWindowLength = 1;
   }
 })();
 
-if (!isPackaged.default.isPackaged) {
+if (!app.isPackaged) {
   // account.FixPOAndPriceMain()
 }
 // account.detectLogoutandLogin()

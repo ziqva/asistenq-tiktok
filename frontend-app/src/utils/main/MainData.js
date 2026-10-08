@@ -1,29 +1,60 @@
-import {io} from 'socket.io-client'
-import server from 'config/server'
+import { io } from 'socket.io-client';
+import server from 'config/server';
 
 export default class MainData {
     constructor() {
-        this.endpoint = server.socket.base
-        this.onMainData = () => {}
-        this.socket = io(this.endpoint, {
-            withCredentials: true
-        })
-        this.socket.on('connect', () => {
-            this.socket.on('monitoring-main-data', this.onMainData)
-            this.socket.emit('get-monitoring-main-data')
-        })
+        this.endpoint = (typeof window !== 'undefined' && window.location && (window.location.port === '9184' || window.location.port === '3000'))
+            ? window.location.origin
+            : (server.socket.base || 'http://localhost:9184');
+        this.lastData = null;
+        this._onMainData = () => {};
 
-        if (this.socket.connected) {
-            this.socket.on('monitoring-main-data', this.onMainData)
-            this.socket.emit('get-monitoring-main-data')
+        try {
+            this.socket = io(this.endpoint, {
+                reconnection: true,
+                reconnectionAttempts: 20,
+                timeout: 10000,
+            });
+
+            this.socket.on('connect', () => {
+                this.getMainData();
+            });
+
+            this.socket.on('monitoring-main-data', (data) => {
+                this.lastData = data;
+                if (typeof this._onMainData === 'function') {
+                    this._onMainData(data);
+                }
+            });
+
+            if (this.socket.connected) {
+                this.getMainData();
+            }
+        } catch (e) {
+            console.error('Error creating socket in MainData:', e);
+        }
+    }
+
+    get onMainData() {
+        return this._onMainData;
+    }
+
+    set onMainData(handler) {
+        this._onMainData = handler;
+        if (this.lastData !== null && typeof handler === 'function') {
+            handler(this.lastData);
         }
     }
 
     getMainData() {
-        if(this.socket.connected) {
-            this.socket.emit('get-monitoring-main-data')
-        } else {
-            throw new Error('Socket is not connected')
+        if (this.socket) {
+            if (this.socket.connected) {
+                this.socket.emit('get-monitoring-main-data');
+            } else {
+                this.socket.once('connect', () => {
+                    this.socket.emit('get-monitoring-main-data');
+                });
+            }
         }
     }
 }

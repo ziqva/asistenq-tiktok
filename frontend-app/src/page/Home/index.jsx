@@ -21,11 +21,9 @@ export default function Home() {
   useEffect(() => {
     filter.onFilter = setActiveFilter;
     MAINDATA.onMainData = (data) => {
-      setMainData(data);
+      setMainData(data || []);
     };
-    MAINDATA.socket.on("connect", () => {
-      MAINDATA.getMainData();
-    });
+    MAINDATA.getMainData();
   }, []);
 
   return (

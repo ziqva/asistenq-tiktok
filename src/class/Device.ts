@@ -13,7 +13,16 @@ export default class Device {
   private machineId: string;
   public registered: boolean;
   private productName: string;
-  public monitoring: Monitoring | null;
+  private _monitoring: Monitoring | null = null;
+  public get monitoring(): Monitoring | null {
+    return this._monitoring;
+  }
+  public set monitoring(m: Monitoring | null) {
+    this._monitoring = m;
+    if (this.registered && this._monitoring) {
+      this._monitoring.sendMainData();
+    }
+  }
   private userName: string;
   private userEmail: string;
   private label: string;
