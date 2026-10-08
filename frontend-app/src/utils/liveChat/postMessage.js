@@ -1,6 +1,5 @@
 import axios from 'axios'
 import server from 'config/server'
-import FormData from 'form-data'
 
 export default function postMessage({
     text,
@@ -18,7 +17,11 @@ export default function postMessage({
         if(attachment) {
             fd.append('attachment', attachment)
         }
-        axios.post(url, fd)
+        axios.post(url, fd, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            }
+        })
         .then(({data}) => {
             if(data.error) {
                 reject(data.msg)

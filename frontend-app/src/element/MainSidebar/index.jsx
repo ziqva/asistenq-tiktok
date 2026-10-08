@@ -19,16 +19,25 @@ export default function MainSidebar({
 }) {
   const [addAccountOpen, setAddAccountOpen] = useState(false);
   const [sd, setSidebarData] = useState({});
-  const [refreshData, setRefreshData] = useState(null)
+  const [refreshData, setRefreshData] = useState({
+    running: false,
+    progress: {
+      percentage: 0,
+      processed: 0,
+      total: 0
+    }
+  });
 
   useEffect(() => {
     sidebarData.onData = (data) => {
-      setSidebarData(data);
+      setSidebarData(data || {});
     };
 
     sidebarData.onRefreshData = (data) => {
-      setRefreshData(data)
-    }
+      if (data) {
+        setRefreshData(data);
+      }
+    };
   }, []);
 
   return (
@@ -58,17 +67,15 @@ export default function MainSidebar({
         data={sd}
       />
       <Saldo count={sd.saldo || 0} active={active} data={sd} />
-      {refreshData && (
-        <FilterButton
-          active={active}
-          onDeleted={onResetSelectedIds}
-          data={sd}
-          onActiveChange={onActiveChange}
-          useSelection={useSelection}
-          selectedIds={selectedIds}
-          refreshData={refreshData}
-        />
-      )}
+      <FilterButton
+        active={active}
+        onDeleted={onResetSelectedIds}
+        data={sd}
+        onActiveChange={onActiveChange}
+        useSelection={useSelection}
+        selectedIds={selectedIds}
+        refreshData={refreshData}
+      />
       {/* <div className="separator"></div> */}
     </div>
   );

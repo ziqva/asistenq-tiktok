@@ -191,17 +191,17 @@ export default function FilterButton({
               Hapus
             </Button>
           </Popconfirm>
-          {!refreshData.running && (
+          {!refreshData?.running && (
             <Button
               icon={refreshIcon}
               count={selectedIds.length}
-              disabled={selectedIds.length < 1 || refreshData.running}
+              disabled={selectedIds.length < 1 || refreshData?.running}
               onClick={bulkRefresh}
             >Refresh Massal</Button>
           )}
-          {refreshData.running && (
+          {refreshData?.running && (
             <div className="refresh-card-container">
-              <Progress percent={refreshData.progress.percentage}
+              <Progress percent={refreshData?.progress?.percentage || 0}
                 status='active'
                 strokeColor={{ from: '#108ee9', to: '#87d068' }}
                 format={() => ''}
@@ -210,7 +210,7 @@ export default function FilterButton({
               <div className="foot">
                 <Spin size='small' className="spin-bar" />
                 <div className="text">Refreshing data ...</div>
-                <div className="text right">{refreshData.progress.processed}/{refreshData.progress.total}</div>
+                <div className="text right">{refreshData?.progress?.processed || 0}/{refreshData?.progress?.total || 0}</div>
               </div>
             </div>
           )}

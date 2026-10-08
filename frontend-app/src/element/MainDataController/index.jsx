@@ -22,8 +22,10 @@ import CustomColumn from "./CustomColumn";
 
 import OpenBrowser from "utils/openBrowser";
 import UpdateAccountDialog from "element/UpdateAccountDialog";
+import MainDataColumnManager from "utils/customColumn/MainData";
 
 const openBrowser = new OpenBrowser();
+const mainDataColumnManager = new MainDataColumnManager();
 
 export default function MainDataController({
   data,
@@ -39,12 +41,25 @@ export default function MainDataController({
   // const [hideHeader, setHideHeader] = useState(false)
   const [activeAccount, setActiveAccount] = useState(null);
   const [columnData, setColumnData] = useState([]);
-  const [activeColumnIndex, setActiveColumnIndex] = useState([]);
+  const [activeColumnIndex, setActiveColumnIndex] = useState([0, 1, 2, 3, 4, 5, 6, 7, 8, 9]);
 
   useEffect(() => {
-    setActiveColumnIndex(
-      columnData.filter((x) => x.active).map((x) => x.index)
-    );
+    mainDataColumnManager.onMainData = (data) => {
+      if (Array.isArray(data) && data.length > 0) {
+        setColumnData(data);
+        setActiveColumnIndex(
+          data.filter((x) => x.active).map((x) => x.index)
+        );
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (columnData.length > 0) {
+      setActiveColumnIndex(
+        columnData.filter((x) => x.active).map((x) => x.index)
+      );
+    }
   }, [columnData]);
 
   useEffect(() => {
@@ -403,32 +418,25 @@ export default function MainDataController({
         }}
       />
       {data.length > 0 && (
-        <>
-          <SelectionCheckState
-            active={useSelection}
-            onActiveChange={(target) => setUseSelection(target)}
-            onSelectAll={() => {
-              if (selected.length === data.length) {
-                setSelected([]);
-              } else {
-                setSelected(data.map((x) => x.id));
-              }
-            }}
-          />
-          {/* <HideHeader
-                        useSelection={useSelection}
-                        active={hideHeader}
-                        onToggle={() => setHideHeader(x => !x)}
-                    /> */}
-          <CustomColumn
-            style={{
-              left: useSelection ? "240px" : "130px",
-            }}
-            data={columnData}
-            onData={(data) => setColumnData(data)}
-          />
-        </>
+        <SelectionCheckState
+          active={useSelection}
+          onActiveChange={(target) => setUseSelection(target)}
+          onSelectAll={() => {
+            if (selected.length === data.length) {
+              setSelected([]);
+            } else {
+              setSelected(data.map((x) => x.id));
+            }
+          }}
+        />
       )}
+      <CustomColumn
+        style={{
+          left: (useSelection && data.length > 0) ? "240px" : "130px",
+        }}
+        data={columnData}
+        onData={(data) => setColumnData(data)}
+      />
     </div>
   );
 }

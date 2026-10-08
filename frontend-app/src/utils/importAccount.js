@@ -1,4 +1,3 @@
-import FormData from 'form-data'
 import server from 'config/server'
 import axios from 'axios'
 
@@ -8,6 +7,9 @@ export default function importAccount(file) {
         const fd = new FormData()
         fd.append('file', file)
         axios.post(url, fd, {
+            headers: {
+                'Content-Type': 'multipart/form-data'
+            },
             timeout: 1.08e+7
         })
         .then(({data}) => {

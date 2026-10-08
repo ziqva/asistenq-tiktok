@@ -125,14 +125,67 @@ export default class Account {
     | "selected"
     | "all_with_moderation_date"
     selectedAccounts?: any[];
-  }): Promise<null> {
-    let downloadUrl: string = "http://ziqva-resource.streampeg.com/asistenq-tiktok-import-template.xlsx";
-    const downloadResponse: Response = await fetch(downloadUrl);
-    const bufferTemplate = Buffer.from(await downloadResponse.arrayBuffer());
+  }): Promise<{ cancelled?: boolean } | null> {
     const workbook = new exceljs.Workbook();
-    // @ts-ignore
-    await workbook.xlsx.load(bufferTemplate);
-    const worksheet = workbook.getWorksheet(1);
+    let worksheet = workbook.addWorksheet("Accounts");
+    try {
+      let downloadUrl: string = "http://ziqva-resource.streampeg.com/asistenq-tiktok-import-template.xlsx";
+      const downloadResponse: Response = await fetch(downloadUrl);
+      if (downloadResponse.ok) {
+        const bufferTemplate = Buffer.from(await downloadResponse.arrayBuffer());
+        const tempWb = new exceljs.Workbook();
+        // @ts-ignore
+        await tempWb.xlsx.load(bufferTemplate);
+        if (tempWb.worksheets.length > 0) {
+          workbook.removeWorksheet(worksheet.id);
+          worksheet = workbook.addWorksheet("Accounts");
+          const srcSheet = tempWb.getWorksheet(1);
+          if (srcSheet) {
+            srcSheet.eachRow((row, rowNumber) => {
+              worksheet.addRow(row.values);
+            });
+          }
+        }
+      }
+    } catch (err) {
+      console.warn("Failed to fetch remote import template, building default headers:", err.message);
+      if (worksheet.rowCount === 0) {
+        worksheet.addRow([
+          "",
+          "Error",
+          "Nama Toko *",
+          "Alamat Email / No Telp*",
+          "Password*",
+          "Kode Auntenticator*",
+          "Group(s)",
+          "Cookies",
+          "SHOPID",
+          "FP",
+          "OEC SELLER ID",
+          "AID",
+          "X_TOKEN",
+          "BOGUS",
+          "SIGNATURE"
+        ]);
+        worksheet.addRow([
+          "",
+          "Data diisi otomatis oleh sistem",
+          "Minimal 3 karakter",
+          "Harus bersifat unik",
+          "Minimal 6 karakter",
+          "Opsional, jika tidak diisi maka otp dimasukkan secara manual pada saat login",
+          "Pisahkan dengan koma (,) untuk lebih dari 1",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem",
+          "Abaikan, kolom ini diisi oleh sistem"
+        ]);
+      }
+    }
     const accounts: StructAccount[] = await this.all();
     let filteredAccounts: StructAccount[] = [];
     if (type === "all" || type === 'all_with_moderation_date') {
@@ -145,7 +198,7 @@ export default class Account {
       filteredAccounts = accounts.filter((x) => !x.authenticated);
     } else if (type === "selected") {
       filteredAccounts = accounts.filter((x) =>
-        selectedAccounts.includes(x.id)
+        selectedAccounts && selectedAccounts.includes(x.id)
       );
     }
     if (!this.device.registered) {
@@ -159,19 +212,19 @@ export default class Account {
       }
       await worksheet.addRow([
         "",
-        account.name,
-        account.email,
-        account.password,
-        account.secretAutenticator,
-        account.groupNames,
-        JSON.stringify(account.cookies),
-        account.shopid.toString(),
-        account.auth.fp.toString(),
-        account.auth.oecSellerId.toString(),
-        account.auth.aid.toString(),
-        account.auth.msToken.toString(),
-        account.auth.XBogus.toString(),
-        account.auth.signature.toString()
+        account.name || "",
+        account.email || "",
+        account.password || "",
+        account.secretAutenticator || "",
+        account.groupNames || "",
+        JSON.stringify(account.cookies || []),
+        (account.shopid ?? "").toString(),
+        (account.auth?.fp ?? "").toString(),
+        (account.auth?.oecSellerId ?? "").toString(),
+        (account.auth?.aid ?? "").toString(),
+        (account.auth?.msToken ?? "").toString(),
+        (account.auth?.XBogus ?? "").toString(),
+        (account.auth?.signature ?? "").toString()
       ]);
     }
     let res = dialog.showSaveDialogSync({
@@ -180,8 +233,8 @@ export default class Account {
         `Accounts AsistenQ Owner - ${filteredAccounts.length} data.xlsx`
       ),
     });
-    if (typeof res !== "string") {
-      throw new Error("Aksi dibatalkan oleh pengguna");
+    if (typeof res !== "string" || !res) {
+      return { cancelled: true };
     }
     if (!res.endsWith('.xlsx')) { res += '.xlsx' }
     const resBuffer = await workbook.xlsx.writeBuffer();
@@ -597,13 +650,20 @@ export default class Account {
    * @return {Promise<void>} A promise that resolves when the import is complete.
    */
   async imports(buffer: Buffer): Promise<void> {
-    this.accountImportErrors = []
+    this.accountImportErrors = [];
     const workbook: Workbook = new exceljs.Workbook();
     // @ts-ignore
     await workbook.xlsx.load(buffer);
-    let values;
-    const worksheet: Worksheet = await workbook.getWorksheet(1);
-    const rows = await worksheet.getRows(1, worksheet.rowCount);
+    const worksheet: Worksheet | undefined = workbook.getWorksheet(1);
+    if (!worksheet || worksheet.rowCount <= 2) {
+      this.notification.show({
+        title: "Import selesai",
+        message: "Tidak ada baris data akun yang ditemukan dalam file.",
+        buttonOnClick: undefined,
+      });
+      return;
+    }
+    const rows = (worksheet.rowCount > 0 ? await worksheet.getRows(1, worksheet.rowCount) : []) || [];
     let stats: any = {
       success: 0,
       failed: 0,
@@ -613,64 +673,46 @@ export default class Account {
         continue;
       }
       const row = rows[i];
-      values = [
-        row.getCell(1).value ? row.getCell(1).value : row.getCell(1).text,
-        row.getCell(2).value ? row.getCell(2).value : row.getCell(2).text,
-        row.getCell(3).value ? row.getCell(3).value : row.getCell(3).text,
-        row.getCell(4).value ? row.getCell(4).value : row.getCell(4).text,
-        row.getCell(5).value ? row.getCell(5).value : row.getCell(5).text,
-        row.getCell(6).value ? row.getCell(6).value : row.getCell(6).text,
-        row.getCell(7).value ? row.getCell(7).value : row.getCell(7).text,
-        row.getCell(8).value ? row.getCell(8).value : row.getCell(8).text,
-        row.getCell(9).value ? row.getCell(9).value : row.getCell(9).text,
-        row.getCell(10).value ? row.getCell(10).value : row.getCell(10).text,
-        row.getCell(11).value ? row.getCell(11).value : row.getCell(11).text,
-        row.getCell(12).value ? row.getCell(12).value : row.getCell(12).text,
-        row.getCell(13).value ? row.getCell(13).value : row.getCell(13).text,
-        row.getCell(14).value ? row.getCell(14).value : row.getCell(14).text,
+      if (!row) continue;
+      const getVal = (col: number) => {
+        const cell = row.getCell(col);
+        const val = cell.value !== null && cell.value !== undefined ? cell.value : cell.text;
+        return (val !== null && val !== undefined ? val : "").toString().trim();
+      };
+      const values = [
+        getVal(1),
+        getVal(2),
+        getVal(3),
+        getVal(4),
+        getVal(5),
+        getVal(6),
+        getVal(7),
+        getVal(8),
+        getVal(9),
+        getVal(10),
+        getVal(11),
+        getVal(12),
+        getVal(13),
+        getVal(14),
       ];
-      const error: string = values[0].toString().trim();
-      const name: string = values[1]
-        .toString()
-        .trim()
-        .split('"')
-        .join("")
-        .split("'")
-        .join("");
-      const email: string = values[2]
-        .toString()
-        .trim()
-        .split('"')
-        .join("")
-        .split("'")
-        .join("");
-      const password: string = values[3]
-        .toString()
-        .trim()
-        .split('"')
-        .join("")
-        .split("'")
-        .join("");
-      const authenticator: string = values[4]
-        .toString()
-        .trim()
-        .split('"')
-        .join("")
-        .split("'")
-        .join("");
-      const groups: string = values[5]
-        .toString()
-        .trim()
-        .split('"')
-        .join("")
-        .split("'")
-        .join("");
+      const name: string = values[1].split('"').join("").split("'").join("").trim();
+      const email: string = values[2].split('"').join("").split("'").join("").trim();
+      const password: string = values[3].split('"').join("").split("'").join("").trim();
+      const authenticator: string = values[4].split('"').join("").split("'").join("").trim();
+      const groups: string = values[5].split('"').join("").split("'").join("").trim();
+
+      if (!name && !email) {
+        continue;
+      }
+
       let cookies: any[] = [];
-      try {
-        cookies = JSON.parse(values[6].toString());
-      } catch (err) {
-        console.error("failed for parse cookies: ", err.message);
-        console.error(values[6]);
+      const rawCookies = values[6];
+      if (rawCookies && rawCookies.length > 0 && rawCookies !== '[]') {
+        try {
+          cookies = JSON.parse(rawCookies);
+        } catch (err) {
+          console.error("failed to parse cookies: ", err.message);
+        }
       }
 
       try {
@@ -678,34 +720,33 @@ export default class Account {
           name: name,
           email: email,
           password: password,
-          authenticator: authenticator.trim(),
+          authenticator: authenticator,
           labels: groups,
           cookies: cookies,
-          useAuthenticator: authenticator.trim().length > 0,
+          useAuthenticator: authenticator.length > 0,
           authenticated: cookies.length >= 1,
-          shopid: values[7] ? values[7].toString() : '',
+          shopid: values[7] || '',
           auth: {
-            fp: values[8] ? values[8].toString() : '',
-            oecSellerId: values[9] ? values[9].toString() : '',
-            aid: values[10] ? values[10].toString() : '',
-            msToken: values[11] ? values[11].toString() : '',
-            XBogus: values[12] ? values[12].toString() : '',
-            signature: values[13] ? values[13].toString() : ''
+            fp: values[8] || '',
+            oecSellerId: values[9] || '',
+            aid: values[10] || '',
+            msToken: values[11] || '',
+            XBogus: values[12] || '',
+            signature: values[13] || ''
           }
         });
         stats.success++;
       } catch (err) {
         this.notification.show({
           title: `Tidak dapat menambahkan`,
-          message: `Akun "${name}" gagal ditambahkan karena: ${err.message || err
-            }`,
+          message: `Akun "${name || email}" gagal ditambahkan karena: ${err.message || err}`,
           buttonOnClick: undefined,
         });
         this.accountImportErrors.push({
-          name,
-          email,
+          name: name || email,
+          email: email,
           reason: err.message || err
-        })
+        });
         stats.failed++;
       }
     }
@@ -715,8 +756,10 @@ export default class Account {
       message: `Berhasil ${stats.success} akun ditambahkan, ${stats.failed} akun gagal ditambahkan`,
       buttonOnClick: undefined,
     });
-    const viewErrorsUrl = 'http://localhost:9184/api/import-error-list?e=' + moment().tz("Asia/Jakarta").unix()
-    shell.openExternal(viewErrorsUrl)
+    if (this.accountImportErrors.length > 0) {
+      const viewErrorsUrl = 'http://localhost:9184/api/import-error-list?e=' + moment().tz("Asia/Jakarta").unix();
+      shell.openExternal(viewErrorsUrl);
+    }
   }
 
   /**

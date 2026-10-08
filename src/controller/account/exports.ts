@@ -4,10 +4,11 @@ import Account from '../../class/Account'
 export default async function _exports(req: Request, res: Response, account: Account) {
     try {
         const {type, selected} = req.body
-        const resBuffer: Buffer = await account._exports({ type, selectedAccounts: selected })
+        const result = await account._exports({ type, selectedAccounts: selected })
         res.json({
             error: false,
-            msg: null
+            msg: null,
+            cancelled: result?.cancelled || false
         })
     } catch(error) {
         res.json({
