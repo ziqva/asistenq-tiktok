@@ -10,7 +10,13 @@ export default class MainData {
         })
         this.socket.on('connect', () => {
             this.socket.on('monitoring-main-data', this.onMainData)
+            this.socket.emit('get-monitoring-main-data')
         })
+
+        if (this.socket.connected) {
+            this.socket.on('monitoring-main-data', this.onMainData)
+            this.socket.emit('get-monitoring-main-data')
+        }
     }
 
     getMainData() {

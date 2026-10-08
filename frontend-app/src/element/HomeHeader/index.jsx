@@ -9,7 +9,6 @@ import Import from "./Import";
 import Export from "./Export";
 import Group from "./Group";
 import MassUpdateGroup from "./MassUpdateGroup";
-import News from "./News";
 import FreeFeature from "element/FreeFeature";
 import PMType from "./PMType";
 
@@ -66,7 +65,6 @@ export default function HomeHeader({
         </div>
       </div>
       <div className="right-components">
-        <News />
         <MassUpdateGroup useSelection={useSelection} selecteds={selectedRows} />
         {/* <PMType data-aos="fade-left" data-aos-duration={300} /> */}
         <Group data-aos="fade-left" data-aos-duration={400} />

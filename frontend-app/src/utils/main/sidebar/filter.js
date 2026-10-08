@@ -12,7 +12,15 @@ export default class Filter {
             socket.on('monitoring-active-filter', filter => {
                 this.onFilter && this.onFilter(filter)
             })
+            socket.emit('get-monitoring-active-filter')
         })
+
+        if (socket.connected) {
+            socket.on('monitoring-active-filter', filter => {
+                this.onFilter && this.onFilter(filter)
+            })
+            socket.emit('get-monitoring-active-filter')
+        }
     }
 
     setActive(filter) {

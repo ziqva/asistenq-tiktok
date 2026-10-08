@@ -15,6 +15,17 @@ export default class SidebarData {
             this.socket.on('refresh-account-data', data => {
                 this.onRefreshData(data)
             })
+            this.socket.emit('get-main-sidebar-data')
         })
+
+        if (this.socket.connected) {
+            this.socket.on('main-sidebar-data', data => {
+                this.onData(data)
+            })
+            this.socket.on('refresh-account-data', data => {
+                this.onRefreshData(data)
+            })
+            this.socket.emit('get-main-sidebar-data')
+        }
     }
 }

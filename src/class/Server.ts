@@ -528,10 +528,10 @@ export default class Server {
           this.monitoring.sockets = this.monitoring.sockets.filter(
             (x) => x !== socket,
           );
-          this.account.sockets = this.monitoring.sockets.filter(
+          this.account.sockets = this.account.sockets.filter(
             (x) => x !== socket,
           );
-          this.authenticator.sockets = this.monitoring.sockets.filter(
+          this.authenticator.sockets = this.authenticator.sockets.filter(
             (x) => x !== socket,
           );
         });
@@ -547,6 +547,15 @@ export default class Server {
         });
         socket.on("get-monitoring-main-data", () =>
           this.monitoring.sendMainData(),
+        );
+        socket.on("get-main-sidebar-data", () =>
+          this.monitoring.sendMainData(),
+        );
+        socket.on("get-monitoring-active-filter", () =>
+          this.monitoring.sendActiveFilter(),
+        );
+        socket.on("get-bot-status", () =>
+          this.monitoring.sendBotStatus(),
         );
         socket.on("get-free-feature-authenticator-data", () =>
           this.authenticator.sendData(),

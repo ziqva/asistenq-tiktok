@@ -1,13 +1,14 @@
 {
   "name": "asistenq-tiktok",
-  "version": "1.2.19",
+  "version": "1.2.26",
   "description": "A minimal application but lot of feature for monitor the Tiktok Shop accounts in one app and bundled with additional tool (ziqva.com)",
   "main": "./dist/index.js",
   "scripts": {
     "postinstall": "node ./scripts/ensure-electron.js",
-    "build": "npx tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y /i && xcopy frontend-app\\build dist\\controller\\frontend /s /e /h /y /i && xcopy src\\sounds dist\\sounds /s /e /h /y /i",
+    "build:frontend": "pnpm --dir frontend-app run build",
+    "build": "npm run build:frontend && npx tsc --emitDecoratorMetadata --downlevelIteration && xcopy src\\images dist\\images /s /e /h /y /i && xcopy frontend-app\\build dist\\controller\\frontend /s /e /h /y /i && xcopy frontend-app\\build src\\controller\\frontend /s /e /h /y /i && xcopy src\\sounds dist\\sounds /s /e /h /y /i",
     "watch": "tsc -w",
-    "build:mac": "npx tsc --emitDecoratorMetadata --downlevelIteration && cp -R src/images dist/images && cp -R frontend-app/build dist/controller/frontend && cp -R src/sounds dist/sounds",
+    "build:mac": "npm run build:frontend && npx tsc --emitDecoratorMetadata --downlevelIteration && cp -R src/images dist/images && cp -R frontend-app/build dist/controller/frontend && cp -R frontend-app/build src/controller/frontend && cp -R src/sounds dist/sounds",
     "lint": "eslint -c .eslintrc --ext .ts ./src",
     "start": "node ./scripts/dev-start.js",
     "start:backend-only": "node ./scripts/ensure-electron.js && npm run build && node -e \"const ep = require('electron'); require('child_process').spawn(ep, ['./dist/index.js'], { stdio: 'inherit' });\"",
@@ -18,6 +19,7 @@
     "package:mac": "npm run clean:output && npm run build:prod:mac && cp package.json dist && npx electron-builder",
     "build:prod": "npm run build && ts-node ./minifyProd.ts",
     "build:prod:mac": "npm run build:mac && ts-node ./minifyProd.ts",
+    "release": "node ./scripts/release.js",
     "publish": "npm run build:prod && xcopy /y package.json dist && npx electron-builder -p always"
   },
   "build": {

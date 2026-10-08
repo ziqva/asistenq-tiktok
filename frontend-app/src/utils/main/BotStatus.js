@@ -10,7 +10,12 @@ export default class BotStatus {
 
         this.socket.on('connect', () => { 
             this.socket.on('bot-status', onStatus)
+            this.socket.emit('get-bot-status')
         })
+        if (this.socket.connected) {
+            this.socket.on('bot-status', onStatus)
+            this.socket.emit('get-bot-status')
+        }
     }
 
     toggle() {

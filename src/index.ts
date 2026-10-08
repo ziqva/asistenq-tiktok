@@ -11,6 +11,7 @@ import {
   dialog,
   session,
   WebRequestFilter,
+  Menu,
 } from "electron";
 import { AppUpdater, autoUpdater } from "electron-updater";
 import * as path from "path";
@@ -191,7 +192,7 @@ function createWindow() {
     height: 600,
     webPreferences: {
       nodeIntegration: true,
-      devTools: isPackaged.default.isPackaged ? false : true,
+      devTools: true,
       webSecurity: false,
       imageAnimationPolicy: "animate",
     },
@@ -205,6 +206,45 @@ function createWindow() {
   mainWindow.setTitle(title);
   zoomLevel.browserWindow = mainWindow;
   mainWindow.on("page-title-updated", (sender) => sender.preventDefault());
+
+  mainWindow.webContents.on("before-input-event", (event, input) => {
+    if (input.type === "keyDown") {
+      if (
+        (input.control && input.shift && input.key.toLowerCase() === "i") ||
+        input.key === "F12"
+      ) {
+        mainWindow.webContents.toggleDevTools();
+        event.preventDefault();
+      } else if (
+        (input.control && input.key.toLowerCase() === "r") ||
+        input.key === "F5"
+      ) {
+        mainWindow.webContents.reload();
+        event.preventDefault();
+      }
+    }
+  });
+
+  mainWindow.webContents.on("context-menu", (e, params) => {
+    const contextMenu = Menu.buildFromTemplate([
+      {
+        label: "Inspect Element",
+        click: () => {
+          mainWindow.webContents.inspectElement(params.x, params.y);
+          if (!mainWindow.webContents.isDevToolsOpened()) {
+            mainWindow.webContents.openDevTools();
+          }
+        },
+      },
+      {
+        label: "Reload",
+        click: () => {
+          mainWindow.webContents.reload();
+        },
+      },
+    ]);
+    contextMenu.popup();
+  });
   const url = isPackaged.default.isPackaged
     ? "http://localhost:9184/authentication"
     : "http://localhost:3000/authentication";

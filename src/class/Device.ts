@@ -55,6 +55,9 @@ export default class Device {
     this.pingInterval = 90000;
     this.recorder.machineId = this.getMachineId()
     this.preventVMProcess()
+    this.refreshIsRegistered().catch((err) => {
+      console.log("Initial device registration check failed:", err.message || err);
+    });
   }
 
   private preventVMProcess() {

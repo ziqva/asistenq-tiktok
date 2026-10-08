@@ -75,6 +75,7 @@ const SSH_CONFIG = {
 const ROOT_DIR = path.resolve(__dirname, '..');
 const ROOT_PKG_PATH = path.join(ROOT_DIR, 'package.json');
 const FRONTEND_PKG_PATH = path.join(ROOT_DIR, 'frontend-app', 'package.json');
+const DIST_DIR = path.join(ROOT_DIR, 'dist');
 const OUTPUT_DIR = path.join(ROOT_DIR, 'electron', 'output');
 
 // Parse CLI Flags
@@ -429,10 +430,45 @@ async function main() {
     await runCommand('pnpm', ['--dir', 'frontend-app', 'run', 'build']);
     success('React Frontend built successfully.');
 
+    // 3b.1 Copy React frontend build to src/controller/frontend
+    const srcControllerFrontend = path.join(ROOT_DIR, 'src', 'controller', 'frontend');
+    const frontendBuildDir = path.join(ROOT_DIR, 'frontend-app', 'build');
+    if (fs.existsSync(srcControllerFrontend)) {
+      fs.rmSync(srcControllerFrontend, { recursive: true, force: true });
+    }
+    fs.cpSync(frontendBuildDir, srcControllerFrontend, { recursive: true });
+    info(`Copied frontend build to ${colors.cyan}src/controller/frontend${colors.reset}`);
+
     // 3c. Backend TypeScript build & asset bundling
     info('2/3 Building Backend TypeScript & Bundling Assets...');
     await runCommand('pnpm', ['run', 'build']);
     success('Backend and assets built successfully.');
+
+    // 3c.1 Strict Verification of Bundled Frontend Assets in dist/
+    const distFrontendDir = path.join(DIST_DIR, 'controller', 'frontend');
+    const distIndexHtml = path.join(distFrontendDir, 'index.html');
+    const distAssetManifest = path.join(distFrontendDir, 'asset-manifest.json');
+    const distStaticJs = path.join(distFrontendDir, 'static', 'js');
+
+    if (!fs.existsSync(distIndexHtml) || !fs.existsSync(distAssetManifest) || !fs.existsSync(distStaticJs)) {
+      throw new Error(`CRITICAL: Frontend bundle is missing or incomplete in ${distFrontendDir}!`);
+    }
+
+    const manifest = JSON.parse(fs.readFileSync(distAssetManifest, 'utf8'));
+    const mainJsRelative = manifest.files['main.js'] || (manifest.entrypoints && manifest.entrypoints.find(e => e.endsWith('.js')));
+    if (!mainJsRelative) {
+      throw new Error(`CRITICAL: No main.js entrypoint declared in frontend asset-manifest.json!`);
+    }
+    const cleanRelative = mainJsRelative.startsWith('/') ? mainJsRelative.slice(1) : mainJsRelative;
+    const mainJsDisk = path.join(distFrontendDir, cleanRelative);
+    if (!fs.existsSync(mainJsDisk)) {
+      throw new Error(`CRITICAL: Main frontend bundle ${mainJsDisk} does not exist on disk!`);
+    }
+    const mainJsStats = fs.statSync(mainJsDisk);
+    if (mainJsStats.size < 50000) {
+      throw new Error(`CRITICAL: Frontend bundle ${mainJsDisk} seems corrupted (size only ${mainJsStats.size} bytes)!`);
+    }
+    success(`Frontend verification passed: verified bundle ${colors.bold}${path.basename(mainJsDisk)}${colors.reset} (${(mainJsStats.size / 1024).toFixed(1)} KB)`);
 
     // 3d. Electron packaging
     info('3/3 Packaging Windows Installer with electron-builder...');
