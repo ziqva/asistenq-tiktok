@@ -6,8 +6,8 @@
  * Steps:
  * 1. Prompts or reads target version from CLI argument / interactive prompt.
  * 2. Updates version in package.json and frontend-app/package.json (if exists).
- * 3. Builds React frontend (pnpm --dir frontend-app run build).
- * 4. Builds backend TypeScript and bundles assets (pnpm run build).
+ * 3. Builds React frontend (npm --prefix frontend-app run build).
+ * 4. Builds backend TypeScript and bundles assets (npm run build).
  * 5. Runs electron-builder (npx electron-builder --win).
  * 6. Scans electron/output, renames spaces to hyphens in .exe and .exe.blockmap files.
  * 7. Patches latest.yml replacing spaces with hyphens in url and path fields.
@@ -168,7 +168,7 @@ function runCommand(command, args, options = {}) {
     const cwd = options.cwd || ROOT_DIR;
     info(`Executing: ${colors.bold}${command} ${args.join(' ')}${colors.reset} in ${colors.gray}${cwd}${colors.reset}`);
 
-    // On Windows, pnpm and npx are .cmd files
+    // On Windows, npm and npx are .cmd files
     const isWin = process.platform === 'win32';
     let execCmd = command;
     if (isWin && !command.endsWith('.cmd') && !command.endsWith('.exe') && !command.endsWith('.bat')) {
@@ -347,20 +347,20 @@ async function main() {
     warn('Skipping build and packaging steps as --skip-build was specified.');
   } else if (opts.dryRun) {
     section('Step 2: Build & Packaging Pipeline (Dry Run)');
-    info('[DRY-RUN] Would execute: pnpm --dir frontend-app run build');
-    info('[DRY-RUN] Would execute: pnpm run build');
+    info('[DRY-RUN] Would execute: npm --prefix frontend-app run build');
+    info('[DRY-RUN] Would execute: npm run build');
     info('[DRY-RUN] Would execute: npx electron-builder --win');
   } else {
     section('Step 2: Build & Packaging Pipeline');
 
     // 3a. React frontend build
     info('1/3 Building React Frontend (frontend-app)...');
-    await runCommand('pnpm', ['--dir', 'frontend-app', 'run', 'build']);
+    await runCommand('npm', ['--prefix', 'frontend-app', 'run', 'build']);
     success('React Frontend built successfully.');
 
     // 3b. Backend TypeScript build & asset bundling
     info('2/3 Building Backend TypeScript & Bundling Assets...');
-    await runCommand('pnpm', ['run', 'build']);
+    await runCommand('npm', ['run', 'build']);
     success('Backend and assets built successfully.');
 
     // 3c. Electron packaging

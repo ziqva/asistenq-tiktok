@@ -28,16 +28,19 @@ export default class Browser {
   private extensionsRootPath: string;
   constructor() {
     this.chromeBinPath = this.getChromeBinPath();
-    this.rootPath =
+    const appDataPath =
       process.platform === "darwin"
         ? path.join(os.homedir(), "Library", "Application Support", "AsistenQ")
-        : path.join(os.tmpdir(), "asistenq-owner-node");
+        : process.env.APPDATA
+        ? path.join(process.env.APPDATA, "AsistenQ")
+        : path.join(os.homedir(), "AppData", "Roaming", "AsistenQ");
+    this.rootPath = appDataPath;
     if (!fs.existsSync(this.rootPath)) {
-      fs.mkdirSync(this.rootPath);
+      fs.mkdirSync(this.rootPath, { recursive: true });
     }
     this.extensionsRootPath = path.join(this.rootPath, "_extensions_");
     if (!fs.existsSync(this.extensionsRootPath)) {
-      fs.mkdirSync(this.extensionsRootPath);
+      fs.mkdirSync(this.extensionsRootPath, { recursive: true });
     }
   }
 
@@ -269,9 +272,10 @@ export default class Browser {
    */
   async getBrowser(
     userDataDir: string = "default",
-    args: string[] = []
+    args: string[] = [],
+    clearUserData: boolean = false
   ): Promise<{ page: Page; browser: BrowserPuppeteer }> {
-    if (userDataDir === "login") {
+    if (clearUserData || userDataDir === "login") {
       try {
         fs.rmSync(this.generateUserdataDir(userDataDir), {
           force: true,
@@ -304,13 +308,6 @@ export default class Browser {
         ]),
       })
     );
-
-    try {
-      fs.rmSync(this.generateUserdataDir(userDataDir), {
-        force: true,
-        recursive: true,
-      });
-    } catch (er) {}
 
     const extensionsDir = (await this.extensions()).map((x) => x.dir);
     const browser = await puppeteer.launch({

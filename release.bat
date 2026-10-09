@@ -19,10 +19,10 @@ if %errorlevel% neq 0 (
     exit /b 1
 )
 
-where pnpm >nul 2>&1
+where npm >nul 2>&1
 if %errorlevel% neq 0 (
-    echo [WARNING] pnpm is not found in PATH.
-    echo Frontend and backend builds may require pnpm.
+    echo [WARNING] npm is not found in PATH.
+    echo Frontend and backend builds require npm.
     echo.
 )
 

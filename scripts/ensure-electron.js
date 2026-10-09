@@ -22,6 +22,18 @@ function getElectronPackageDir() {
   }
 }
 
+function getPlatformExeName() {
+  switch (process.platform) {
+    case 'mas':
+    case 'darwin':
+      return 'Electron.app/Contents/MacOS/Electron';
+    case 'win32':
+      return 'electron.exe';
+    default:
+      return 'electron';
+  }
+}
+
 async function ensureElectronBinary() {
   const electronDir = getElectronPackageDir();
   if (!electronDir) {
@@ -30,11 +42,18 @@ async function ensureElectronBinary() {
   }
 
   const pathTxtPath = path.join(electronDir, 'path.txt');
-  const exeName = process.platform === 'win32' ? 'electron.exe' : 'electron';
+  const exeName = getPlatformExeName();
   const exePath = path.join(electronDir, 'dist', exeName);
+  const currentPath = fs.existsSync(pathTxtPath) ? fs.readFileSync(pathTxtPath, 'utf8').trim() : '';
 
-  if (fs.existsSync(pathTxtPath) && fs.existsSync(exePath)) {
+  if (currentPath === exeName && fs.existsSync(exePath)) {
     // Already properly configured
+    return;
+  }
+
+  if (fs.existsSync(exePath)) {
+    fs.writeFileSync(pathTxtPath, exeName, 'utf8');
+    console.log('[ensure-electron] Updated path.txt to point to correct executable.');
     return;
   }
 

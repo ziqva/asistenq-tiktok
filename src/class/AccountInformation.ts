@@ -18,6 +18,167 @@ export default class AccountInformation {
   private account: Account;
   private processedInvoiceMemory: Memory
 
+  public getPlatformInfo() {
+    const isWin = process.platform === "win32";
+    const isMac = process.platform === "darwin";
+    if (isWin) {
+      return {
+        ua: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        secPlatform: '"Windows"',
+        browserPlatform: "Win32",
+        browserVersionEncoded: "5.0%20%28Windows%20NT%2010.0%3B%20Win64%3B%20x64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36",
+      };
+    } else if (isMac) {
+      return {
+        ua: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        secPlatform: '"macOS"',
+        browserPlatform: "MacIntel",
+        browserVersionEncoded: "5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36",
+      };
+    } else {
+      return {
+        ua: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36",
+        secPlatform: '"Linux"',
+        browserPlatform: "Linux x86_64",
+        browserVersionEncoded: "5.0%20%28X11%3B%20Linux%20x86_64%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36",
+      };
+    }
+  }
+
+  public getBrowserHeaders(account: StructAccount, extraHeaders: any = {}): any {
+    const platform = this.getPlatformInfo();
+    const rawCookies = this.parseCookiesToRaw(account.cookies, "seller-id.tokopedia.com");
+    return {
+      cookie: rawCookies,
+      accept: "*/*",
+      "sec-ch-ua": '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": platform.secPlatform,
+      "sec-fetch-dest": "empty",
+      "sec-fetch-mode": "cors",
+      "sec-fetch-site": "same-origin",
+      "x-tt-oec-region": "ID",
+      origin: "https://seller-id.tokopedia.com",
+      "accept-encoding": "gzip, deflate, br, zstd",
+      "accept-language": "en-US,en;q=0.9,id;q=0.8",
+      "user-agent": platform.ua,
+      ...extraHeaders,
+    };
+  }
+
+  private async updateCookiesFromResponse(account: StructAccount, requestUrl: string, response: Response): Promise<boolean> {
+    const rawSetCookies = response.headers.raw()["set-cookie"];
+    if (!rawSetCookies || !Array.isArray(rawSetCookies) || rawSetCookies.length === 0) {
+      return false;
+    }
+
+    let defaultDomain = "seller-id.tokopedia.com";
+    try {
+      const parsedUrl = new URL(requestUrl);
+      defaultDomain = parsedUrl.hostname;
+    } catch {}
+
+    if (!Array.isArray(account.cookies)) {
+      account.cookies = [];
+    }
+
+    let changed = false;
+
+    for (const setCookieStr of rawSetCookies) {
+      const parts = setCookieStr.split(";").map((p) => p.trim()).filter(Boolean);
+      if (parts.length === 0) continue;
+
+      const firstPart = parts[0];
+      const eqIdx = firstPart.indexOf("=");
+      if (eqIdx === -1) continue;
+
+      const name = firstPart.substring(0, eqIdx).trim();
+      const value = firstPart.substring(eqIdx + 1).trim();
+      if (!name) continue;
+
+      let domain = defaultDomain;
+      let path = "/";
+      let expires = 0;
+      let httpOnly = false;
+      let secure = false;
+      let sameSite = "Lax";
+
+      for (let i = 1; i < parts.length; i++) {
+        const attr = parts[i];
+        const attrEq = attr.indexOf("=");
+        const attrName = (attrEq === -1 ? attr : attr.substring(0, attrEq)).trim().toLowerCase();
+        const attrVal = attrEq === -1 ? "" : attr.substring(attrEq + 1).trim();
+
+        if (attrName === "domain") {
+          domain = attrVal.startsWith(".") ? attrVal : "." + attrVal;
+        } else if (attrName === "path") {
+          path = attrVal || "/";
+        } else if (attrName === "expires") {
+          const expDate = new Date(attrVal);
+          if (!isNaN(expDate.getTime())) {
+            expires = Math.floor(expDate.getTime() / 1000);
+          }
+        } else if (attrName === "max-age") {
+          const maxAgeSec = parseInt(attrVal, 10);
+          if (!isNaN(maxAgeSec)) {
+            expires = Math.floor(Date.now() / 1000) + maxAgeSec;
+          }
+        } else if (attrName === "httponly") {
+          httpOnly = true;
+        } else if (attrName === "secure") {
+          secure = true;
+        } else if (attrName === "samesite") {
+          sameSite = attrVal;
+        }
+      }
+
+      const normDomain = domain.toLowerCase().replace(/^\./, "");
+      const existingIdx = account.cookies.findIndex((c: any) => {
+        const cNormDomain = (c.domain || "").toLowerCase().replace(/^\./, "");
+        return c.name === name && cNormDomain === normDomain;
+      });
+
+      if (existingIdx !== -1) {
+        const existingCookie = account.cookies[existingIdx] as any;
+        existingCookie.value = value;
+        if (expires > 0) existingCookie.expires = expires;
+        existingCookie.httpOnly = httpOnly;
+        existingCookie.secure = secure;
+      } else {
+        account.cookies.push({
+          name,
+          value,
+          domain,
+          path,
+          expires,
+          httpOnly,
+          secure,
+          session: expires === 0,
+          sameSite,
+        });
+      }
+      changed = true;
+    }
+
+    if (changed) {
+      await this.account.setCookies(account.id, account.cookies);
+    }
+    return changed;
+  }
+
+  private async safeFetch(account: StructAccount, url: string, init?: any): Promise<Response> {
+    const response = await fetch(url, init);
+    try {
+      const updated = await this.updateCookiesFromResponse(account, url, response);
+      if (updated && init && init.headers) {
+        init.headers.cookie = this.parseCookiesToRaw(account.cookies, "seller-id.tokopedia.com");
+      }
+    } catch (err: any) {
+      console.error("Failed to update cookies from response:", err?.message || err);
+    }
+    return response;
+  }
+
   constructor({
     notification,
     mainDataColumn,
@@ -37,8 +198,9 @@ export default class AccountInformation {
   }
 
   private async setupProduct(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/product/tab/count/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
-    const response = await fetch(url, {
+    const platform = this.getPlatformInfo();
+    const url = `https://seller-id.tokopedia.com/api/v1/product/tab/count/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
+    const response = await this.safeFetch(account, url, {
       headers,
       method: "GET"
     })
@@ -63,7 +225,7 @@ export default class AccountInformation {
    */
   private async setupModerated(account: StructAccount, headers: any): Promise<StructAccount> {
     const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
-    const response = await fetch(url, {
+    const response = await this.safeFetch(account, url, {
       headers,
       method: "GET"
     })
@@ -71,7 +233,7 @@ export default class AccountInformation {
       const data: any = await response.json()
 
       if (!data.data) { console.error('setupModerated error: ', data); return account; }
-      const shopStatus = data.data.seller.shop_status
+      const shopStatus = data.data.seller?.shop_status
       account.moderated = shopStatus === 3
       account.statusMessage = shopStatus === 3 ? "Dinonaktifkan secara permanen" : ""
     } else {
@@ -88,7 +250,8 @@ export default class AccountInformation {
   public async getModerationDate(account: StructAccount): Promise<Date | null> {
     try {
       if (!account.moderated || !account.authenticated) { return null }
-      const rawCookies: string = this.parseCookiesToRaw(account.cookies)
+      const rawCookies: string = this.parseCookiesToRaw(account.cookies, "tokopedia.com")
+      const platform = this.getPlatformInfo();
 
       let headers = {
         cookie: rawCookies,
@@ -98,8 +261,7 @@ export default class AccountInformation {
         "sec-fetch-dest": "empty",
         "sec-fetch-mode": "cors",
         "sec-fetch-site": "same-site",
-        "user-agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36",
+        "user-agent": platform.ua,
         "x-source": "tokopedia-lite",
         "x-tkpd-lite-service": "icarus",
         "x-version": "bf3d806",
@@ -107,7 +269,7 @@ export default class AccountInformation {
       }
 
       const chatListPayload = { "query": "query ChatSearch($keyword:String,$status:Int,$page:Int,$size:Int,$isSeller:Int){chatSearch(keyword:$keyword,status:$status,page:$page,size:$size,isSeller:$isSeller){contact{data{contact{id role attributes{domain name shopStatus tag thumbnail}}createBy createTimeStr lastMessage msgId oppositeId oppositeType replyId roomId}}replies{hasNext data{contact{role attributes{name thumbnail}}createTimeStr lastMessage msgId productId}}}}", "variables": { "keyword": "tokopedia seller", "size": 10, "status": 1, "page": 1, "isSeller": 1 } }
-      const chatlistResponse = await fetch('https://gql.tokopedia.com/graphql/ChatSearch', {
+      const chatlistResponse = await this.safeFetch(account, 'https://gql.tokopedia.com/graphql/ChatSearch', {
         method: "POST",
         body: JSON.stringify(chatListPayload),
         headers,
@@ -119,7 +281,7 @@ export default class AccountInformation {
         //   retreive the message data by the message id
         // @ts-ignore
         const messagePayload = { "query": "query ChatReplies($messageId:Int!,$keyword:String,$page:Int,$perPage:Int=10,$beforeReplyTime:String,$afterReplyTime:String,$isTextOnly:Boolean){chatReplies( msgId:$messageId keyword:$keyword page:$page perPage:$perPage beforeReplyTime:$beforeReplyTime afterReplyTime:$afterReplyTime isTextOnly:$isTextOnly){block{isPromoBlocked isBlocked blockedUntil}contacts{userId shopId name role interlocutor badge isGold domain thumbnail shopType tag status{timestamp isOnline}}textareaReply list{date chats{time replies{attachmentIDString attachment{id type fallback{message html}attributes}parentReply{attachmentID attachmentType senderID name replyID replyTimeUnixNano fraudStatus source mainText subText imageURL isExpired}blastId source isOpposite isRead msg msgIdString oldMsgId oldMsgTitle replyId replyTime role senderId senderName status fraudStatus allowDelete label}}}hasNext hasNextAfter showTimeMachine minReplyTime maxReplyTime attachmentIDs}}", "variables": { "perPage": 50, "messageId": msgid, "keyword": "", "isTextOnly": true, "page": 1, "beforeReplyTime": null, "afterReplyTime": null } }
-        const messageResponse = await fetch('https://gql.tokopedia.com/graphql/ChatReplies', {
+        const messageResponse = await this.safeFetch(account, 'https://gql.tokopedia.com/graphql/ChatReplies', {
           method: "POST",
           body: JSON.stringify(messagePayload),
           headers
@@ -157,8 +319,9 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object with the current balance.
    */
   private async setupBalance(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
-    const response = await fetch(url, {
+    const platform = this.getPlatformInfo();
+    const url = `https://seller-id.tokopedia.com/api/v1/pay/settlement/balance/get?locale=en&language=en&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
+    const response = await this.safeFetch(account, url, {
       headers,
       method: "GET"
     })
@@ -192,22 +355,7 @@ export default class AccountInformation {
       this.mainDataColumn.isActiveByName("Chat") === true &&
         payloads.push(this.getChatPayload()); // chat count, oldest chat epoch }
 
-      const rawCookies: string = this.parseCookiesToRaw(account.cookies);
-      const headers = {
-        cookie: rawCookies,
-        accept: '*/*',
-        'sec-ch-ua': `"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"`,
-        'sec-ch-ua-mobile': '?0',
-        'sec-ch-ua-platform': `"macOS"`,
-        'sec-fetch-dest': 'empty',
-        'sec-fetch-mode': 'cors',
-        'sec-fetch-site': 'same-origin',
-        'x-tt-oec-region': 'ID',
-        'origin': 'https://seller-id.tokopedia.com',
-        'accept-encoding': 'gzip, deflate, br, zstd',
-        'accept-language': 'en-US,en;q=0.9,id;q=0.8',
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36'
-      };
+      const headers = this.getBrowserHeaders(account);
 
       account = await this.setupProfileDetail(account, headers);
       if (!account.authenticated) {
@@ -216,6 +364,9 @@ export default class AccountInformation {
         }
         return account;
       }
+
+      // Keep cookie header in sync after setupProfileDetail potentially updated cookies
+      headers.cookie = this.parseCookiesToRaw(account.cookies, "seller-id.tokopedia.com");
 
       account = await this.setupChat(account, headers);
       account = await this.setupShippingOrder(account, headers);
@@ -308,7 +459,8 @@ export default class AccountInformation {
       console.log(`[${timestamp}] 📋 Shop ID: ${account.shopid}`);
       console.log(`${'='.repeat(80)}\n`);
 
-      const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+      const platform = this.getPlatformInfo();
+      const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
       console.log({ url })
       console.log(`[${timestamp}] 🌐 API URL: ${url.substring(0, 100)}...`);
 
@@ -320,7 +472,7 @@ export default class AccountInformation {
       console.log(`[${timestamp}] 🔑 Auth Info - XBogus: ${account.auth.XBogus ? account.auth.XBogus.substring(0, 20) + '...' : 'MISSING'}`);
 
       console.log(`[${timestamp}] 🚀 Sending HTTP POST request...`);
-      const response = await fetch(url, {
+      const response = await this.safeFetch(account, url, {
         method: "POST",
         headers: {
           ...headers,
@@ -499,9 +651,10 @@ export default class AccountInformation {
    * @throws Will throw an error if the API request fails or if the response cannot be parsed as JSON.
    */
   private async setupNewOrder(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const platform = this.getPlatformInfo();
+    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload = { "sort_info": "1", "search_condition": { "condition_list": { "order_status": { "value": ["1"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
-    const response = await fetch(url, {
+    const response = await this.safeFetch(account, url, {
       method: "POST",
       headers: {
         ...header,
@@ -562,9 +715,10 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object.
    */
   private async setupDikemas(account: StructAccount, header: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F143.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const platform = this.getPlatformInfo();
+    const url = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&seller_id=${account.id}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload = { "search_condition": { "condition_list": { "label_status": { "value": ["3"] }, "search_tab": { "value": ["101"] } } }, "offset": 0, "count": 20, "sort_info": "11", "search_cursor": "", "pagination_type": 0 }
-    const response = await fetch(url, {
+    const response = await this.safeFetch(account, url, {
       method: "POST",
       headers: {
         ...header,
@@ -574,7 +728,7 @@ export default class AccountInformation {
     })
     const data = await response.json()
     console.log({ data, type: "setupDikemas" })
-    if (typeof data.data.total_count !== 'number') { console.error('setupDikemas error: ', data); return account; }
+    if (typeof data.data?.total_count !== 'number') { console.error('setupDikemas error: ', data); return account; }
 
     let orders: any = data.data.main_orders || []
     let orderPotency: number = 0
@@ -582,9 +736,9 @@ export default class AccountInformation {
 
 
     // filter packaged orders
-    const url2 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const url2 = `https://seller-id.tokopedia.com/api/fulfillment/order/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload2 = { "sort_info": "1", "search_condition": { "condition_list": { "order_status": { "value": ["2"] }, "search_tab": { "value": ["101"] } } }, "count": 20, "pagination_type": 0, "offset": 0, "search_cursor": "", "extra_data_list": ["48_hours_dispatch_tag", "split_combine_tag_v1", "free_sample_tag_v1", "hazmat_order_tag", "made_to_order_tag", "pre_order_tag", "pre_sell_tag", "zero_lottery_tag", "gift_insurance_tag", "internal_purchase_tag", "replacement_order_tag_v1", "risk_order_tag_v1", "combo_sku_tag", "refundable_sample_tag", "split_package_type_tag", "two_day_delivery", "DT_order"] }
-    const response2 = await fetch(url2, {
+    const response2 = await this.safeFetch(account, url2, {
       method: "POST",
       headers: {
         ...header,
@@ -676,10 +830,11 @@ export default class AccountInformation {
    * @returns A Promise resolving to the updated account object with complaint count and potency.
    */
   private async setupComplaint(account: StructAccount, header: any): Promise<StructAccount> {
+    const platform = this.getPlatformInfo();
     // Complaint (cancellation) orders
-    const url1 = `https://seller-id.tokopedia.com/api/v2/reverse/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
+    const url1 = `https://seller-id.tokopedia.com/api/v2/reverse/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=4068&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
     const payload1 = { "tab": 13, "list_condition": {}, "offset": 0, "count": 20, "pagination_type": 0 }
-    const response1 = await fetch(url1, {
+    const response1 = await this.safeFetch(account, url1, {
       method: "POST",
       headers: {
         ...header,
@@ -706,9 +861,9 @@ export default class AccountInformation {
 
     try {
       // Complaint (return) orders
-      const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F137.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`;
+      const url2 = `https://seller-id.tokopedia.com/api/v1/reverse/component/orders/list?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1470&screen_height=956&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`;
       const payload2 = { "pagination_type": 0, "count": 20, "offset": 0, "search_condition": { "tab": { "str_value_list": ["800"] }, "order_sort_comp": { "str_value_list": ["OrderSort_UPADTE_TIME_DESC"] }, "sub_tab_pending": { "str_value_list": ["sub_tab_pending_all"] } }, "component_version": "hit_opt_aware_revamp" };
-      const response2 = await fetch(url2, {
+      const response2 = await this.safeFetch(account, url2, {
         method: "POST",
         headers: {
           ...header,
@@ -981,8 +1136,9 @@ export default class AccountInformation {
    */
   private async setupChat(account: StructAccount, headers: any): Promise<StructAccount> {
     try {
-      const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=MacIntel&browser_name=Mozilla&browser_version=5.0%20%28Macintosh%3B%20Intel%20Mac%20OS%20X%2010_15_7%29%20AppleWebKit%2F537.36%20%28KHTML%2C%20like%20Gecko%29%20Chrome%2F135.0.0.0%20Safari%2F537.36&browser_online=true&timezone_name=Asia%2FJakarta`
-      const response = await fetch(url, {
+      const platform = this.getPlatformInfo();
+      const url = `https://seller-id.tokopedia.com/api/v1/shop_im/shop/conversation/get_wait_user_count?locale=id-ID&language=id&oec_seller_id=${account.auth.oecSellerId}&aid=${account.auth.aid}&app_name=i18n_ecom_shop&fp=${account.auth.fp}&device_platform=web&cookie_enabled=true&screen_width=1920&screen_height=1080&browser_language=en-US&browser_platform=${platform.browserPlatform}&browser_name=Mozilla&browser_version=${platform.browserVersionEncoded}&browser_online=true&timezone_name=Asia%2FJakarta`
+      const response = await this.safeFetch(account, url, {
         headers
       })
       if (!response.ok) { return account }
@@ -1024,7 +1180,7 @@ export default class AccountInformation {
 
   private async setupProfileDetail(account: StructAccount, headers: any): Promise<StructAccount> {
     const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
-    const response = await fetch(url, {
+    const response = await this.safeFetch(account, url, {
       headers
     })
     if (!response.ok) {
@@ -1036,9 +1192,23 @@ export default class AccountInformation {
     }
     const data: any = await response.json()
     // Check authoritative authentication state from seller/common/get
-    if (data.code !== 0 || !data.data) {
+    const isExplicitlyUnauth =
+      data.code === 98001002 ||
+      data.code === 401 ||
+      data.code === 403 ||
+      (typeof data.message === "string" &&
+        (data.message.toLowerCase().includes("not login") ||
+          data.message.toLowerCase().includes("unauthorized") ||
+          data.message.toLowerCase().includes("session expired")));
+
+    if (isExplicitlyUnauth) {
       account.authenticated = false;
       await this.account.setAuthenticated(account.id, false);
+      return account;
+    }
+
+    if (data.code !== 0 || !data.data) {
+      console.warn(`setupProfileDetail returned code ${data.code}: ${data.message || 'unknown message'}`);
       return account;
     }
 
@@ -1053,12 +1223,36 @@ export default class AccountInformation {
     return account;
   }
 
-  parseCookiesToRaw(cookies: any[]): string {
-    let t = "";
-    for (const cookie of cookies) {
-      t += `${cookie.name}=${cookie.value};`;
+  parseCookiesToRaw(cookies: any[], targetHost: string = "seller-id.tokopedia.com"): string {
+    if (!Array.isArray(cookies) || cookies.length === 0) {
+      return "";
     }
-    return t;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const cookieMap = new Map<string, string>();
+    const relevantCookies = cookies.filter((cookie) => {
+      if (!cookie || !cookie.name || cookie.value === undefined) return false;
+      if (cookie.expires && typeof cookie.expires === "number" && cookie.expires > 0) {
+        if (cookie.expires < nowSec) return false;
+      }
+      if (!cookie.domain) return true;
+      const cDomain = cookie.domain.toLowerCase().replace(/^\./, "");
+      const host = targetHost.toLowerCase();
+      return host === cDomain || host.endsWith("." + cDomain) || cDomain.endsWith("tokopedia.com") || cDomain.endsWith("tiktok.com");
+    });
+
+    relevantCookies.sort((a, b) => {
+      const aLen = (a.domain || "").length;
+      const bLen = (b.domain || "").length;
+      return aLen - bLen;
+    });
+
+    for (const cookie of relevantCookies) {
+      cookieMap.set(cookie.name, cookie.value);
+    }
+
+    return Array.from(cookieMap.entries())
+      .map(([name, value]) => `${name}=${value}`)
+      .join("; ");
   }
 
   getProductCountPayload(shopid: number) {

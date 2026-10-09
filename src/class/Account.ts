@@ -390,14 +390,39 @@ export default class Account {
    * Parses an array of cookies into a raw string representation.
    *
    * @param {any[]} cookies - An array containing the cookies to be parsed.
+   * @param {string} targetHost - The target domain host to match against.
    * @return {string} - The raw string representation of the parsed cookies.
    */
-  parseCookiesToRaw(cookies: any[]): string {
-    let t = "";
-    for (const cookie of cookies) {
-      t += `${cookie.name}=${cookie.value};`;
+  parseCookiesToRaw(cookies: any[], targetHost: string = "seller-id.tokopedia.com"): string {
+    if (!Array.isArray(cookies) || cookies.length === 0) {
+      return "";
     }
-    return t;
+    const nowSec = Math.floor(Date.now() / 1000);
+    const cookieMap = new Map<string, string>();
+    const relevantCookies = cookies.filter((cookie) => {
+      if (!cookie || !cookie.name || cookie.value === undefined) return false;
+      if (cookie.expires && typeof cookie.expires === "number" && cookie.expires > 0) {
+        if (cookie.expires < nowSec) return false;
+      }
+      if (!cookie.domain) return true;
+      const cDomain = cookie.domain.toLowerCase().replace(/^\./, "");
+      const host = targetHost.toLowerCase();
+      return host === cDomain || host.endsWith("." + cDomain) || cDomain.endsWith("tokopedia.com") || cDomain.endsWith("tiktok.com");
+    });
+
+    relevantCookies.sort((a, b) => {
+      const aLen = (a.domain || "").length;
+      const bLen = (b.domain || "").length;
+      return aLen - bLen;
+    });
+
+    for (const cookie of relevantCookies) {
+      cookieMap.set(cookie.name, cookie.value);
+    }
+
+    return Array.from(cookieMap.entries())
+      .map(([name, value]) => `${name}=${value}`)
+      .join("; ");
   }
 
   /**
@@ -863,7 +888,7 @@ export default class Account {
     await client.send("Network.clearBrowserCookies");
     await this.browser.navigatePage(
       page,
-      "https://seller-id.tokopedia.com/account/login?setup=1&shop_region=ID",
+      "https://seller-id.tokopedia.com/account/login?shop_region=ID",
       30
     );
     const els = {
@@ -997,6 +1022,26 @@ export default class Account {
           cookies = await page.cookies()
         }
 
+        // Capture localStorage for SDK authentication keys
+        try {
+          const storageData = await page.evaluate(() => {
+            const data: Record<string, string> = {};
+            for (let i = 0; i < localStorage.length; i++) {
+              const k = localStorage.key(i);
+              if (k) data[k] = localStorage.getItem(k) || '';
+            }
+            return data;
+          });
+          const profileDir = this.browser.generateUserdataDir(`account_${id}`);
+          fs.writeFileSync(
+            path.join(profileDir, 'storage_data.json'),
+            JSON.stringify(storageData, null, 2),
+            'utf-8'
+          );
+        } catch (e) {
+          console.warn("Failed to capture localStorage:", e);
+        }
+
         const rawCookies = this.parseCookiesToRaw(cookies)
         const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
         await this.setCookies(id, cookies)
@@ -1055,13 +1100,17 @@ export default class Account {
     cookies: string
   }): Promise<string> {
     try {
+      const isWin = process.platform === "win32";
+      const ua = isWin
+        ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
+        : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
       const commonUrl = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
       const commonResponse = await fetch(commonUrl, {
         method: "GET",
         headers: {
           cookie: cookies,
           "content-type": "application/json",
-          "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Safari/537.36"
+          "user-agent": ua
         }
       })
       if (commonResponse.ok) {
@@ -1136,19 +1185,29 @@ export default class Account {
           req.continue()
         } catch (e) { }
 
-        if (url.includes('proxy/seller/helpdesk/unread_msg/get') && !settled) {
-          settled = true
-          clearTimeout(timeout)
+        const isAuthRequest =
+          url.includes('proxy/seller/helpdesk/unread_msg/get') ||
+          (url.includes('/api/') &&
+            (url.includes('oec_seller_id') ||
+              url.includes('msToken') ||
+              url.includes('X-Bogus') ||
+              url.includes('XBogus')));
+
+        if (isAuthRequest && !settled) {
           const params: any = querystring.parse(url.split('?')[1] || '')
-          await cleanup()
-          resolve({
-            fp: (params.fp as string) || '',
-            oecSellerId: (params.oec_seller_id as string) || '',
-            aid: (params.aid as string) || '',
-            msToken: (params.msToken as string) || '',
-            XBogus: (params['X-Bogus'] as string) || '',
-            signature: ''
-          })
+          if (params.oec_seller_id || params.fp || params.msToken || params['X-Bogus'] || params.XBogus) {
+            settled = true
+            clearTimeout(timeout)
+            await cleanup()
+            resolve({
+              fp: (params.fp as string) || '',
+              oecSellerId: (params.oec_seller_id as string) || '',
+              aid: (params.aid as string) || '',
+              msToken: (params.msToken as string) || '',
+              XBogus: (params['X-Bogus'] as string) || (params.XBogus as string) || '',
+              signature: ''
+            })
+          }
         }
       }
 
@@ -1165,11 +1224,11 @@ export default class Account {
    */
   async login(ids: number[], chromeUserData?: string): Promise<void> {
     for (const id of ids) {
-      const { browser, page } = await this.browser.getBrowser('login', [
-        "--incognito",
+      const profileName = chromeUserData || `account_${id}`;
+      const { browser, page } = await this.browser.getBrowser(profileName, [
         "--window-size=700,600",
         "--window-position=0,0",
-      ]);
+      ], true);
       try {
         const timeout: number = await this.setting.get("auth_timeout");
         const controller: AbortController = new AbortController();

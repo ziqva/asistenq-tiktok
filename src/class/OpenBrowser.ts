@@ -3,6 +3,8 @@ import { Page, Browser } from "puppeteer";
 import BrowserEngine from "./Browser";
 import Monitoring from "./Monitoring";
 import TemplateChat from "./TemplateChat";
+import * as fs from "fs";
+import * as path from "path";
 
 export default class OpenBrowser {
   private account: Account;
@@ -180,14 +182,23 @@ export default class OpenBrowser {
    * @return {Promise<void>} A promise that resolves when the cookies are successfully updated.
    */
   private async updateCookies(page: Page, id: number): Promise<void> {
-    return; // Disable this feature
     try {
-      if (page.isClosed()) {
+      if (!page || page.isClosed()) {
         return;
       }
-      const cookies = await page.cookies();
-      await this.account.setCookies(id, cookies);
-      console.log("Cookies updated: ", id);
+      let cookies: any[] = [];
+      try {
+        const cdp = await page.target().createCDPSession();
+        const res = await cdp.send("Network.getAllCookies");
+        if (res && Array.isArray(res.cookies) && res.cookies.length > 0) {
+          cookies = res.cookies;
+        }
+      } catch (e) {
+        cookies = await page.cookies();
+      }
+      if (cookies.length > 0) {
+        await this.account.setCookies(id, cookies);
+      }
     } catch (err) {}
   }
 
@@ -257,27 +268,60 @@ export default class OpenBrowser {
     this.chats = await this.templateChat.getAccountChats(id);
     this.templateChat.setOfAccount(id, this.chats);
     try {
+      if (this.lastOpenedId !== id && this.browser) {
+        await this.browser.close().catch(() => {});
+        this.browser = null;
+        this.page = null;
+      }
       await this.page.goto("about:blank");
     } catch (err) {
+      const profileName = `account_${id}`;
       const { browser, page } = await this.browserEngine.getBrowser(
-        "open-browser",
-        [
-        ]
+        profileName,
+        [],
+        false
       );
       this.page = page;
       this.browser = browser;
-      this.browser.on("disconnected", () => {
+      this.browser.on("disconnected", async () => {
         this.monitoring.openedAccountId = null;
+        if (this.updateCookiesInt) {
+          clearInterval(this.updateCookiesInt);
+          this.updateCookiesInt = null;
+        }
         this.browser = null;
         this.page = null;
         this.sendActiveAccount();
-        // clearInterval(this.updateCookiesInt);
-        this.updateCookiesInt = null;
-        // if (this.detectLogoutInterval) {
-        //   clearInterval(this.detectLogoutInterval);
-        // }
         this.detectLogoutInterval = null;
       });
+    }
+
+    // Start periodic cookie sync
+    if (this.updateCookiesInt) {
+      clearInterval(this.updateCookiesInt);
+    }
+    this.updateCookiesInt = setInterval(() => {
+      if (this.page && !this.page.isClosed()) {
+        this.updateCookies(this.page, id);
+      }
+    }, 15000);
+
+    // Restore localStorage if available
+    try {
+      const profileDir = this.browserEngine.generateUserdataDir(`account_${id}`);
+      const storageFile = path.join(profileDir, 'storage_data.json');
+      if (fs.existsSync(storageFile)) {
+        const storageData = JSON.parse(fs.readFileSync(storageFile, 'utf-8'));
+        await this.page.evaluateOnNewDocument((data) => {
+          for (const key of Object.keys(data)) {
+            if (!localStorage.getItem(key)) {
+              localStorage.setItem(key, data[key]);
+            }
+          }
+        }, storageData);
+      }
+    } catch (e) {
+      console.warn("Failed to inject localStorage:", e);
     }
     const sanitizeCookies = (rawCookies: any[]) => {
       return rawCookies

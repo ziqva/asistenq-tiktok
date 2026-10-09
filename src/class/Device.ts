@@ -88,13 +88,19 @@ export default class Device {
 
   private getHddSerialNumber(): string {
     try {
-      const output = execSync('wmic diskdrive get SerialNumber').toString();
-      const lines = output.split('\n');
-      const serialNumber = lines[1]?.trim(); // Assuming the serial number is on the second line
-      if (!serialNumber) {
-        throw new Error('Serial number not found');
+      if (process.platform === 'win32') {
+        const output = execSync('wmic diskdrive get SerialNumber').toString();
+        const lines = output.split('\n');
+        const serialNumber = lines[1]?.trim(); // Assuming the serial number is on the second line
+        if (!serialNumber) {
+          throw new Error('Serial number not found');
+        }
+        return serialNumber;
+      } else if (process.platform === 'darwin') {
+        const output = execSync("system_profiler SPHardwareDataType | awk '/Serial Number/ {print $4}'").toString().trim();
+        return output || 'unknown';
       }
-      return serialNumber;
+      return 'unknown';
     } catch (error) {
       console.error('Error fetching HDD serial number:', error);
       return 'unknown';

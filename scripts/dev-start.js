@@ -116,9 +116,9 @@ async function main() {
   };
 
   const isWin = process.platform === 'win32';
-  const npmCmd = isWin ? 'npm.cmd' : 'npm';
+  const pmCmd = isWin ? 'npm.cmd' : 'npm';
 
-  frontendProcess = spawn(npmCmd, ['start'], {
+  frontendProcess = spawn(pmCmd, ['start'], {
     cwd: path.resolve(__dirname, '..', 'frontend-app'),
     env: frontendEnv,
     stdio: ['inherit', 'pipe', 'pipe'],
@@ -148,7 +148,8 @@ async function main() {
   // Step 4: Build backend TypeScript and static assets
   console.log('[dev-start] Compiling backend and preparing assets...');
   try {
-    execSync('npm run build', {
+    const buildCmd = process.platform === 'win32' ? 'npm run build' : 'npm run build:mac';
+    execSync(buildCmd, {
       cwd: path.resolve(__dirname, '..'),
       stdio: 'inherit',
     });
