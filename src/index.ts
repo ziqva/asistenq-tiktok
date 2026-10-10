@@ -201,7 +201,19 @@ function createWindow() {
     icon: iconPath,
     autoHideMenuBar: true,
   });
-  const title: string = `AsistenQ Tiktok - ${app.getVersion()}`;
+  let appVersion = app.getVersion();
+  try {
+    const pkgPath = isPackaged.default.isPackaged
+      ? path.join(__dirname, "package.json")
+      : path.join(__dirname, "..", "package.json");
+    if (fs.existsSync(pkgPath)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf-8"));
+      if (pkg?.version) {
+        appVersion = pkg.version;
+      }
+    }
+  } catch (err) {}
+  const title: string = `AsistenQ Tiktok - ${appVersion}`;
   mainWindow.setTitle(title);
   zoomLevel.browserWindow = mainWindow;
   mainWindow.on("page-title-updated", (sender) => sender.preventDefault());

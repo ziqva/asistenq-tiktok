@@ -17,6 +17,7 @@ export default class AccountInformation {
   private mainDataColumn: MainDataColumn;
   private account: Account;
   private processedInvoiceMemory: Memory
+  private unauthFailures: Map<number, number> = new Map();
 
   public getPlatformInfo() {
     const isWin = process.platform === "win32";
@@ -50,15 +51,15 @@ export default class AccountInformation {
     const rawCookies = this.parseCookiesToRaw(account.cookies, "seller-id.tokopedia.com");
     return {
       cookie: rawCookies,
-      accept: "*/*",
+      accept: "application/json, text/plain, */*",
+      referer: "https://seller-id.tokopedia.com/homepage",
+      origin: "https://seller-id.tokopedia.com",
       "sec-ch-ua": '"Google Chrome";v="135", "Not-A.Brand";v="8", "Chromium";v="135"',
       "sec-ch-ua-mobile": "?0",
       "sec-ch-ua-platform": platform.secPlatform,
       "sec-fetch-dest": "empty",
       "sec-fetch-mode": "cors",
       "sec-fetch-site": "same-origin",
-      "x-tt-oec-region": "ID",
-      origin: "https://seller-id.tokopedia.com",
       "accept-encoding": "gzip, deflate, br, zstd",
       "accept-language": "en-US,en;q=0.9,id;q=0.8",
       "user-agent": platform.ua,
@@ -224,7 +225,7 @@ export default class AccountInformation {
    * @returns A promise that resolves to the updated account object with moderation status set.
    */
   private async setupModerated(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
+    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=false&default_region=ID&version=3`
     const response = await this.safeFetch(account, url, {
       headers,
       method: "GET"
@@ -1179,47 +1180,109 @@ export default class AccountInformation {
   // }
 
   private async setupProfileDetail(account: StructAccount, headers: any): Promise<StructAccount> {
-    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
-    const response = await this.safeFetch(account, url, {
-      headers
-    })
-    if (!response.ok) {
-      if (response.status === 401 || response.status === 403) {
-        account.authenticated = false;
-        await this.account.setAuthenticated(account.id, false);
+    const url = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=false&default_region=ID&version=3`;
+    let commonOk = false;
+    let commonUnauth = false;
+    let data: any = null;
+
+    try {
+      const response = await this.safeFetch(account, url, { headers });
+      if (response.ok) {
+        data = await response.json();
+        if (data && data.code === 0 && data.data?.seller) {
+          commonOk = true;
+        } else if (
+          data &&
+          (data.code === 98001002 ||
+            data.code === 401 ||
+            data.code === 403 ||
+            (typeof data.message === "string" &&
+              (data.message.toLowerCase().includes("not login") ||
+                data.message.toLowerCase().includes("unauthorized") ||
+                data.message.toLowerCase().includes("session expired"))))
+        ) {
+          commonUnauth = true;
+        }
+      } else if (response.status === 401 || response.status === 403) {
+        commonUnauth = true;
+      }
+    } catch (err: any) {
+      console.warn(`setupProfileDetail fetch error for account ${account.id}:`, err?.message || err);
+    }
+
+    if (commonOk && data?.data) {
+      this.unauthFailures.delete(account.id);
+      account.authenticated = true;
+      if (data.data.seller?.seller_id) {
+        account.shopid = String(data.data.seller.seller_id);
+      }
+      if (data.data.seller?.name) {
+        account.name = account.name || String(data.data.seller.name);
+      }
+      if (data.data.seller?.logo?.url_list && data.data.seller.logo.url_list.length > 0) {
+        account.avatar = data.data.seller.logo.url_list[0];
       }
       return account;
     }
-    const data: any = await response.json()
-    // Check authoritative authentication state from seller/common/get
-    const isExplicitlyUnauth =
-      data.code === 98001002 ||
-      data.code === 401 ||
-      data.code === 403 ||
-      (typeof data.message === "string" &&
-        (data.message.toLowerCase().includes("not login") ||
-          data.message.toLowerCase().includes("unauthorized") ||
-          data.message.toLowerCase().includes("session expired")));
 
-    if (isExplicitlyUnauth) {
-      account.authenticated = false;
-      await this.account.setAuthenticated(account.id, false);
-      return account;
+    // Secondary fallback verification via seller account endpoint
+    let fallbackOk = false;
+    let fallbackUnauth = false;
+    try {
+      const fallbackUrl = `https://seller-id.tokopedia.com/api/v1/seller/account/get?locale=en&language=en&aid=4068&app_name=i18n_ecom_shop`;
+      const fallbackResponse = await this.safeFetch(account, fallbackUrl, { headers });
+      if (fallbackResponse.ok) {
+        const fallbackData: any = await fallbackResponse.json();
+        if (
+          fallbackData &&
+          fallbackData.code === 0 &&
+          (fallbackData.data?.account || fallbackData.data?.seller)
+        ) {
+          fallbackOk = true;
+          this.unauthFailures.delete(account.id);
+          account.authenticated = true;
+          if (fallbackData.data?.seller?.seller_id) {
+            account.shopid = String(fallbackData.data.seller.seller_id);
+          } else if (fallbackData.data?.account?.user_name) {
+            account.shopid = String(fallbackData.data.account.user_name);
+          }
+          if (fallbackData.data?.account?.avatar_url) {
+            account.avatar = fallbackData.data.account.avatar_url;
+          }
+          return account;
+        } else if (
+          fallbackData &&
+          (fallbackData.code === 98001002 ||
+            fallbackData.code === 401 ||
+            fallbackData.code === 403 ||
+            (typeof fallbackData.message === "string" &&
+              (fallbackData.message.toLowerCase().includes("not login") ||
+                fallbackData.message.toLowerCase().includes("unauthorized") ||
+                fallbackData.message.toLowerCase().includes("session expired"))))
+        ) {
+          fallbackUnauth = true;
+        }
+      } else if (fallbackResponse.status === 401 || fallbackResponse.status === 403) {
+        fallbackUnauth = true;
+      }
+    } catch (err: any) {
+      console.warn(`setupProfileDetail fallback error for account ${account.id}:`, err?.message || err);
     }
 
-    if (data.code !== 0 || !data.data) {
-      console.warn(`setupProfileDetail returned code ${data.code}: ${data.message || 'unknown message'}`);
-      return account;
+    // Require 3 consecutive confirmed unauth failures across both endpoints before demoting
+    if (commonUnauth || fallbackUnauth) {
+      const currentFailures = (this.unauthFailures.get(account.id) || 0) + 1;
+      this.unauthFailures.set(account.id, currentFailures);
+      console.warn(`Account ${account.id} (${account.name}) unauth check failed (${currentFailures}/3)`);
+
+      if (currentFailures >= 3) {
+        console.warn(`Account ${account.id} (${account.name}) confirmed unauthenticated after 3 consecutive failures`);
+        this.unauthFailures.delete(account.id);
+        account.authenticated = false;
+        await this.account.setAuthenticated(account.id, false);
+      }
     }
 
-    account.authenticated = true;
-    if (data.data.seller?.seller_id) {
-      account.shopid = String(data.data.seller.seller_id);
-    }
-    if (data.data.seller?.logo?.url_list && data.data.seller.logo.url_list.length > 0) {
-      const profileUrl = data.data.seller.logo.url_list[0];
-      account.avatar = profileUrl;
-    }
     return account;
   }
 
@@ -1237,7 +1300,7 @@ export default class AccountInformation {
       if (!cookie.domain) return true;
       const cDomain = cookie.domain.toLowerCase().replace(/^\./, "");
       const host = targetHost.toLowerCase();
-      return host === cDomain || host.endsWith("." + cDomain) || cDomain.endsWith("tokopedia.com") || cDomain.endsWith("tiktok.com");
+      return host === cDomain || host.endsWith("." + cDomain);
     });
 
     relevantCookies.sort((a, b) => {

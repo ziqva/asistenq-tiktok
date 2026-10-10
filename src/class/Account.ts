@@ -407,7 +407,7 @@ export default class Account {
       if (!cookie.domain) return true;
       const cDomain = cookie.domain.toLowerCase().replace(/^\./, "");
       const host = targetHost.toLowerCase();
-      return host === cDomain || host.endsWith("." + cDomain) || cDomain.endsWith("tokopedia.com") || cDomain.endsWith("tiktok.com");
+      return host === cDomain || host.endsWith("." + cDomain);
     });
 
     relevantCookies.sort((a, b) => {
@@ -1001,25 +1001,22 @@ export default class Account {
         'https://seller-id.tokopedia.com/sott',
         'https://seller-id.tokopedia.com/setup'
       ].includes(url.split("?")[0])) {
-        console.log("Navigating into the seller profile tab")
-        // It's already authenticated, then, i need to get the auth params from the cookies
-        await page.setRequestInterception(true)
-        this.browser.navigatePage(page, 'https://seller-id.tokopedia.com/profile/seller-profile?tab=account_information', 2)
-        const authParams = await this.listenAuthParams(page)
+        console.log("Authenticated page reached, waiting for session settlement");
+        await new Promise((r) => setTimeout(r, 2000));
 
-        let cookies: any[] = []
+        let cookies: any[] = [];
         try {
-          const cdpSession = await page.target().createCDPSession()
-          const cdpCookies = await cdpSession.send("Network.getAllCookies")
+          const cdpSession = await page.target().createCDPSession();
+          const cdpCookies = await cdpSession.send("Network.getAllCookies");
           if (cdpCookies && Array.isArray(cdpCookies.cookies) && cdpCookies.cookies.length > 0) {
-            cookies = cdpCookies.cookies
+            cookies = cdpCookies.cookies;
           }
         } catch (e) {
-          console.warn("CDP getAllCookies failed, falling back to page.cookies():", e)
+          console.warn("CDP getAllCookies failed, falling back to page.cookies():", e);
         }
 
         if (cookies.length === 0) {
-          cookies = await page.cookies()
+          cookies = await page.cookies();
         }
 
         // Capture localStorage for SDK authentication keys
@@ -1042,14 +1039,59 @@ export default class Account {
           console.warn("Failed to capture localStorage:", e);
         }
 
-        const rawCookies = this.parseCookiesToRaw(cookies)
-        const sellerId = await this.getSellerID2(authParams, { cookies: rawCookies })
-        await this.setCookies(id, cookies)
-        if (sellerId) {
-          await this.setShopId(sellerId, id)
+        // Direct in-page profile extraction from the authenticated browser session
+        let inPageSellerId = "";
+        try {
+          const profileData = await page.evaluate(async () => {
+            const win: any = window;
+            try {
+              const res = await win.fetch("/api/v3/seller/common/get?need_verify_account=false&default_region=ID&version=3", {
+                credentials: "include",
+              });
+              if (res.ok) {
+                const json = await res.json();
+                if (json?.data?.seller?.seller_id) {
+                  return {
+                    sellerId: String(json.data.seller.seller_id),
+                    shopName: json.data.seller.name || "",
+                  };
+                }
+              }
+            } catch (e) {}
+            try {
+              const res2 = await win.fetch("/api/v1/seller/account/get?locale=en&language=en&aid=4068&app_name=i18n_ecom_shop", {
+                credentials: "include",
+              });
+              if (res2.ok) {
+                const json2 = await res2.json();
+                return {
+                  sellerId: String(json2?.data?.seller?.seller_id || json2?.data?.account?.user_name || ""),
+                  shopName: json2?.data?.account?.user_name || "",
+                };
+              }
+            } catch (e) {}
+            return null;
+          });
+          if (profileData?.sellerId) {
+            inPageSellerId = profileData.sellerId;
+          }
+        } catch (e) {
+          console.warn("In-page profile extraction failed:", e);
         }
-        await this.setAuthenticated(id, true)
-        await this.setAuthParams(id, authParams)
+
+        const authParams = await this.listenAuthParams(page);
+        const rawCookies = this.parseCookiesToRaw(cookies);
+        const sellerId = inPageSellerId || (await this.getSellerID2(authParams, { cookies: rawCookies }));
+        if (sellerId && !authParams.oecSellerId) {
+          authParams.oecSellerId = sellerId;
+        }
+
+        await this.setCookies(id, cookies);
+        if (sellerId) {
+          await this.setShopId(sellerId, id);
+        }
+        await this.setAuthenticated(id, true);
+        await this.setAuthParams(id, authParams);
         break;
       }
       await new Promise((r) => setTimeout(r, 500));
@@ -1104,12 +1146,14 @@ export default class Account {
       const ua = isWin
         ? "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36"
         : "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36";
-      const commonUrl = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=true&default_region=ID&version=3`
+      const commonUrl = `https://seller-id.tokopedia.com/api/v3/seller/common/get?need_verify_account=false&default_region=ID&version=3`
       const commonResponse = await fetch(commonUrl, {
         method: "GET",
         headers: {
           cookie: cookies,
           "content-type": "application/json",
+          referer: "https://seller-id.tokopedia.com/homepage",
+          origin: "https://seller-id.tokopedia.com",
           "user-agent": ua
         }
       })
@@ -1131,7 +1175,9 @@ export default class Account {
       const response = await fetch(url, {
         method: "GET",
         headers: {
-          cookie: cookies
+          cookie: cookies,
+          referer: "https://seller-id.tokopedia.com/homepage",
+          origin: "https://seller-id.tokopedia.com"
         }
       })
       if (response.ok) {
@@ -1155,20 +1201,17 @@ export default class Account {
       console.log("Waiting until params detected!")
       let settled = false
 
-      const cleanup = async () => {
+      const cleanup = () => {
         try {
           page.off('request', listenRequest)
         } catch (e) { }
-        try {
-          await page.setRequestInterception(false)
-        } catch (e) { }
       }
 
-      const timeout = setTimeout(async () => {
+      const timeout = setTimeout(() => {
         if (settled) return
         settled = true
-        console.warn("listenAuthParams timed out waiting for auth params request, resolving with empty defaults")
-        await cleanup()
+        console.warn("listenAuthParams finished waiting, resolving with captured params or defaults")
+        cleanup()
         resolve({
           fp: '',
           oecSellerId: '',
@@ -1177,13 +1220,10 @@ export default class Account {
           XBogus: '',
           signature: ''
         })
-      }, 10000)
+      }, 4000)
 
-      const listenRequest = async (req: HTTPRequest) => {
+      const listenRequest = (req: HTTPRequest) => {
         const url = req.url()
-        try {
-          req.continue()
-        } catch (e) { }
 
         const isAuthRequest =
           url.includes('proxy/seller/helpdesk/unread_msg/get') ||
@@ -1198,7 +1238,7 @@ export default class Account {
           if (params.oec_seller_id || params.fp || params.msToken || params['X-Bogus'] || params.XBogus) {
             settled = true
             clearTimeout(timeout)
-            await cleanup()
+            cleanup()
             resolve({
               fp: (params.fp as string) || '',
               oecSellerId: (params.oec_seller_id as string) || '',
@@ -1228,7 +1268,7 @@ export default class Account {
       const { browser, page } = await this.browser.getBrowser(profileName, [
         "--window-size=700,600",
         "--window-position=0,0",
-      ], true);
+      ], false);
       try {
         const timeout: number = await this.setting.get("auth_timeout");
         const controller: AbortController = new AbortController();
@@ -1260,12 +1300,9 @@ export default class Account {
         }
         console.error(msg)
       } finally {
-        await new Promise((r) => setTimeout(r, 500));
+        await new Promise((r) => setTimeout(r, 1000));
         try {
           await browser.close();
-        } catch (err) { }
-        try {
-          await process.kill(browser.process().pid)
         } catch (err) { }
       }
     }
